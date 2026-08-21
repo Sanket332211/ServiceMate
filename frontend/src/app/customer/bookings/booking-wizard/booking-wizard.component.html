@@ -1,0 +1,499 @@
+<div class="row justify-content-center py-3">
+  <div class="col-12 col-lg-10">
+    <!-- Top Action Bar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <a routerLink="/customer/dashboard" class="text-decoration-none text-navy-primary small fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+          </a>
+          <span class="text-muted small">/</span>
+          <a routerLink="/customer/bookings" class="text-decoration-none text-navy-primary small fw-semibold">
+            Bookings
+          </a>
+          <span class="text-muted small">/</span>
+          <span class="text-muted small">New Appointment</span>
+        </div>
+        <h3 class="h4 mb-0 fw-bold text-navy-primary">
+          <i class="bi bi-calendar2-plus-fill text-accent-pink me-2"></i> Schedule Service Appointment
+        </h3>
+        <p class="text-muted small mb-0">Capacity-controlled slot booking with instant confirmation</p>
+      </div>
+
+      <div *ngIf="currentStep() < 6">
+        <a routerLink="/customer/bookings" class="btn btn-sm btn-outline-secondary py-2 px-3">
+          <i class="bi bi-list-check me-1"></i> My Bookings
+        </a>
+      </div>
+    </div>
+
+    <!-- Error Feedback Alert -->
+    <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center gap-2 small py-2 px-3 mb-4 rounded-3 shadow-sm" role="alert">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+
+    <!-- Step Progress Indicator (Hidden on confirmation step) -->
+    <div *ngIf="currentStep() < 6" class="brand-card p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center position-relative">
+        <!-- Step 1 -->
+        <div class="text-center" style="z-index: 2; flex: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold shadow-sm"
+               [ngClass]="currentStep() >= 1 ? 'bg-navy-primary text-white' : 'bg-light text-muted'"
+               style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <i *ngIf="currentStep() > 1" class="bi bi-check-lg text-accent-pink"></i>
+            <span *ngIf="currentStep() <= 1">1</span>
+          </div>
+          <div class="small fw-semibold mt-1 d-none d-md-block" [ngClass]="currentStep() >= 1 ? 'text-navy-primary' : 'text-muted'">Vehicle</div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="text-center" style="z-index: 2; flex: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold shadow-sm"
+               [ngClass]="currentStep() >= 2 ? 'bg-navy-primary text-white' : 'bg-light text-muted'"
+               style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <i *ngIf="currentStep() > 2" class="bi bi-check-lg text-accent-pink"></i>
+            <span *ngIf="currentStep() <= 2">2</span>
+          </div>
+          <div class="small fw-semibold mt-1 d-none d-md-block" [ngClass]="currentStep() >= 2 ? 'text-navy-primary' : 'text-muted'">Service</div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="text-center" style="z-index: 2; flex: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold shadow-sm"
+               [ngClass]="currentStep() >= 3 ? 'bg-navy-primary text-white' : 'bg-light text-muted'"
+               style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <i *ngIf="currentStep() > 3" class="bi bi-check-lg text-accent-pink"></i>
+            <span *ngIf="currentStep() <= 3">3</span>
+          </div>
+          <div class="small fw-semibold mt-1 d-none d-md-block" [ngClass]="currentStep() >= 3 ? 'text-navy-primary' : 'text-muted'">Slot</div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="text-center" style="z-index: 2; flex: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold shadow-sm"
+               [ngClass]="currentStep() >= 4 ? 'bg-navy-primary text-white' : 'bg-light text-muted'"
+               style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <i *ngIf="currentStep() > 4" class="bi bi-check-lg text-accent-pink"></i>
+            <span *ngIf="currentStep() <= 4">4</span>
+          </div>
+          <div class="small fw-semibold mt-1 d-none d-md-block" [ngClass]="currentStep() >= 4 ? 'text-navy-primary' : 'text-muted'">Pickup</div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="text-center" style="z-index: 2; flex: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold shadow-sm"
+               [ngClass]="currentStep() >= 5 ? 'bg-navy-primary text-white' : 'bg-light text-muted'"
+               style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <span>5</span>
+          </div>
+          <div class="small fw-semibold mt-1 d-none d-md-block" [ngClass]="currentStep() >= 5 ? 'text-navy-primary' : 'text-muted'">Review</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 1: SELECT VEHICLE                     -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 1" class="brand-card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="fw-bold text-navy-primary mb-1">Step 1: Select Your Vehicle</h5>
+          <p class="text-muted small mb-0">Choose which vehicle from your garage needs servicing</p>
+        </div>
+        <a routerLink="/customer/vehicles" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-plus-lg me-1"></i> Add Vehicle
+        </a>
+      </div>
+
+      <!-- If no vehicles in garage -->
+      <div *ngIf="vehicleService.vehiclesSignal().length === 0" class="p-4 text-center border rounded-3 bg-light my-3">
+        <i class="bi bi-car-front fs-2 text-muted mb-2 d-block"></i>
+        <h6 class="fw-bold text-navy-primary">No Vehicles in Your Garage</h6>
+        <p class="text-muted small mb-3">You need to register at least one vehicle before scheduling a service appointment.</p>
+        <a routerLink="/customer/vehicles" class="btn btn-sm-primary py-2 px-3 shadow-sm">
+          <i class="bi bi-plus-circle me-1"></i> Register Vehicle Now
+        </a>
+      </div>
+
+      <!-- Vehicle Cards Grid -->
+      <div *ngIf="vehicleService.vehiclesSignal().length > 0" class="row g-3 my-2">
+        <div *ngFor="let v of vehicleService.vehiclesSignal()" class="col-12 col-md-6">
+          <div (click)="selectVehicle(v)"
+               class="p-3 rounded-3 cursor-pointer h-100 transition-all"
+               [ngClass]="selectedVehicle()?.id === v.id ? 'border border-2 shadow-sm' : 'border'"
+               [style.border-color]="selectedVehicle()?.id === v.id ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="selectedVehicle()?.id === v.id ? 'rgba(196, 140, 179, 0.08)' : '#ffffff'"
+               style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h6 class="fw-bold text-navy-primary mb-0">{{ v.make }} {{ v.model }}</h6>
+                <span class="text-muted small">{{ v.manufacturingYear }} Model</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="font-monospace small px-2 py-0.5 bg-light rounded border fw-bold">{{ v.registrationNumber }}</span>
+                <i class="bi fs-5" [ngClass]="selectedVehicle()?.id === v.id ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'" [style.color]="selectedVehicle()?.id === v.id ? '#198754' : ''"></i>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+              <div class="d-flex gap-2">
+                <span class="badge-sm-blue status-badge" style="font-size: 0.7rem;">{{ v.fuelType }}</span>
+                <span class="badge-sm-blush status-badge" style="font-size: 0.7rem;">{{ v.transmission }}</span>
+                <span class="badge-sm-accent status-badge" style="font-size: 0.7rem;">{{ v.currentMileage | number }} km</span>
+              </div>
+              <span *ngIf="selectedVehicle()?.id === v.id" class="badge text-white small px-2.5 py-1 fw-bold shadow-sm" style="background-color: #198754; font-size: 0.75rem;">
+                <i class="bi bi-check-lg me-1"></i> Selected
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+        <button (click)="goToStep(2)" class="btn btn-sm-primary py-2 px-4 shadow-sm" [disabled]="!selectedVehicle()">
+          Next: Choose Service <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 2: SELECT SERVICE                     -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 2" class="brand-card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="fw-bold text-navy-primary mb-1">Step 2: Select Service Package(s)</h5>
+          <p class="text-muted small mb-0">Select one or more service packages for {{ selectedVehicle()?.make }} {{ selectedVehicle()?.model }}</p>
+        </div>
+        <span class="badge bg-light text-navy-deep border small py-2 px-3">
+          {{ selectedServices().length }} Selected (₹{{ estimatedServiceAmount | number }})
+        </span>
+      </div>
+
+      <div class="row g-3 my-2">
+        <div *ngFor="let pkg of servicePackages" class="col-12 col-md-6">
+          <div (click)="toggleService(pkg)"
+               class="p-3 rounded-3 border h-100 transition-all d-flex flex-column justify-content-between cursor-pointer"
+               [ngClass]="isServiceSelected(pkg) ? 'border-2 shadow-sm' : 'border'"
+               [style.border-color]="isServiceSelected(pkg) ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="isServiceSelected(pkg) ? 'rgba(196, 140, 179, 0.08)' : '#ffffff'"
+               style="cursor: pointer;">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="bg-navy-primary text-white rounded p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi {{ pkg.icon }} text-accent-pink"></i>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h6 class="fw-bold text-navy-primary mb-0">{{ pkg.displayName }}</h6>
+                    <span *ngIf="aiRecommendedPackage() === pkg.type" class="badge text-white px-2 py-0.5 fw-semibold shadow-sm" style="background: linear-gradient(135deg, #7c3aed, #c48cb3); font-size: 0.72rem;">
+                      <i class="bi bi-stars me-1"></i> ✨ AI Recommended
+                    </span>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-bold text-navy-primary" style="font-size: 1.1rem;">
+                    ₹{{ pkg.basePrice | number }}
+                  </span>
+                  <i class="bi fs-5" [ngClass]="isServiceSelected(pkg) ? 'bi-check-square-fill text-success' : 'bi-square text-muted'" [style.color]="isServiceSelected(pkg) ? '#198754' : ''"></i>
+                </div>
+              </div>
+              <p class="text-muted small mb-2" style="font-size: 0.82rem; line-height: 1.35;">
+                {{ pkg.description }}
+              </p>
+            </div>
+            <div class="pt-2 d-flex justify-content-between align-items-center border-top">
+              <span class="small text-muted" style="font-size: 0.75rem;">
+                Estimated package price
+              </span>
+              <span *ngIf="isServiceSelected(pkg)" class="badge text-white px-2.5 py-1 fw-bold shadow-sm" style="background-color: #198754; font-size: 0.75rem;">
+                <i class="bi bi-check-lg me-1"></i> Selected
+              </span>
+              <span *ngIf="!isServiceSelected(pkg)" class="small text-muted" style="font-size: 0.75rem;">
+                Click to add
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+        <button (click)="goToStep(1)" class="btn btn-outline-secondary py-2 px-3">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button (click)="goToStep(3)" class="btn btn-sm-primary py-2 px-4 shadow-sm" [disabled]="selectedServices().length === 0">
+          Next: Choose Slot <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 3: SELECT DATE & TIME SLOT           -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 3" class="brand-card p-4">
+      <div class="mb-3">
+        <h5 class="fw-bold text-navy-primary mb-1">Step 3: Select Date & Available Slot</h5>
+        <p class="text-muted small mb-0">Strict capacity limit of <strong>2 vehicles per time slot</strong> guarantees dedicated service bay attention</p>
+      </div>
+
+      <!-- 7-Day Date Pill Selector -->
+      <label class="form-label small fw-bold text-navy-primary mb-2">1. Select Appointment Date</label>
+      <div class="d-flex gap-2 overflow-auto pb-2 mb-4">
+        <div *ngFor="let opt of availableDates"
+             (click)="selectDate(opt.dateString)"
+             class="p-2 text-center rounded-3 border flex-shrink-0 transition-all"
+             [style.min-width]="'88px'"
+             [style.border-color]="selectedDate() === opt.dateString ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+             [style.background-color]="selectedDate() === opt.dateString ? 'var(--color-primary-navy)' : '#ffffff'"
+             [style.color]="selectedDate() === opt.dateString ? '#ffffff' : 'inherit'"
+             style="cursor: pointer;">
+          <div class="small fw-bold" [style.color]="selectedDate() === opt.dateString ? 'var(--color-accent)' : 'inherit'">{{ opt.displayDay }}</div>
+          <div class="small" style="font-size: 0.75rem;">{{ opt.displayDate }}</div>
+        </div>
+      </div>
+
+      <!-- Time Slots Grid -->
+      <label class="form-label small fw-bold text-navy-primary mb-2">
+        2. Select Time Slot
+        <span *ngIf="isLoadingSlots()" class="spinner-border spinner-border-sm ms-2 text-muted" role="status"></span>
+      </label>
+
+      <div class="row g-3 mb-2">
+        <div *ngFor="let s of slotsAvailability()" class="col-12 col-md-6">
+          <div (click)="selectSlot(s)"
+               class="p-3 rounded-3 border h-100 transition-all d-flex justify-content-between align-items-center"
+               [ngClass]="{'opacity-50 bg-light': !s.available}"
+               [style.border-color]="selectedSlot()?.slot === s.slot ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="selectedSlot()?.slot === s.slot ? 'rgba(196, 140, 179, 0.12)' : (s.available ? '#ffffff' : '#f8f9fa')"
+               [style.cursor]="s.available ? 'pointer' : 'not-allowed'">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-clock-fill" [ngClass]="s.available ? 'text-accent-pink' : 'text-muted'"></i>
+                <span class="fw-bold text-navy-primary">{{ s.label }}</span>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                <span class="small text-muted" style="font-size: 0.78rem;">Booked: {{ s.booked }} / {{ s.capacity }}</span>
+                <span *ngIf="s.available" class="small text-success fw-semibold" style="font-size: 0.78rem;">
+                  ({{ s.remaining }} {{ s.remaining === 1 ? 'spot' : 'spots' }} left)
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <span *ngIf="!s.available" class="badge bg-secondary px-2 py-1 small">FULL</span>
+              <span *ngIf="s.available && selectedSlot()?.slot === s.slot"
+                    class="badge text-white px-3 py-1.5 fw-bold shadow-sm"
+                    style="background-color: #198754; font-size: 0.8rem; letter-spacing: 0.03em;">
+                <i class="bi bi-check-lg me-1"></i> SELECTED
+              </span>
+              <button *ngIf="s.available && selectedSlot()?.slot !== s.slot" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;">
+                Select
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+        <button (click)="goToStep(2)" class="btn btn-outline-secondary py-2 px-3">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button (click)="goToStep(4)" class="btn btn-sm-primary py-2 px-4 shadow-sm" [disabled]="!selectedSlot()">
+          Next: Pickup & Drop <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 4: PICKUP & DROP                      -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 4" class="brand-card p-4">
+      <div class="mb-3">
+        <h5 class="fw-bold text-navy-primary mb-1">Step 4: Doorstep Pickup & Drop</h5>
+        <p class="text-muted small mb-0">Choose whether you'd like our valet to pick up and deliver your car</p>
+      </div>
+
+      <div class="row g-3 my-2">
+        <!-- Self Drop Option -->
+        <div class="col-12 col-md-6">
+          <div (click)="pickupDropRequired.set(false)"
+               class="p-4 rounded-3 border h-100 transition-all cursor-pointer"
+               [ngClass]="!pickupDropRequired() ? 'border-2 shadow-sm' : 'border'"
+               [style.border-color]="!pickupDropRequired() ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="!pickupDropRequired() ? 'rgba(196, 140, 179, 0.08)' : '#ffffff'"
+               style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-building fs-4 text-navy-primary"></i>
+                <h6 class="fw-bold text-navy-primary mb-0">I will bring my vehicle</h6>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-navy-deep border small">₹0</span>
+                <i class="bi fs-5" [ngClass]="!pickupDropRequired() ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'" [style.color]="!pickupDropRequired() ? '#198754' : ''"></i>
+              </div>
+            </div>
+            <p class="text-muted small mb-3">Drive in to our service center during your booked time slot.</p>
+            <div class="d-flex justify-content-end">
+              <span *ngIf="!pickupDropRequired()" class="badge text-white small px-2.5 py-1 fw-bold shadow-sm" style="background-color: #198754; font-size: 0.75rem;">
+                <i class="bi bi-check-lg me-1"></i> Selected
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Doorstep Pickup & Drop Option -->
+        <div class="col-12 col-md-6">
+          <div (click)="pickupDropRequired.set(true)"
+               class="p-4 rounded-3 border h-100 transition-all cursor-pointer"
+               [ngClass]="pickupDropRequired() ? 'border-2 shadow-sm' : 'border'"
+               [style.border-color]="pickupDropRequired() ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="pickupDropRequired() ? 'rgba(196, 140, 179, 0.08)' : '#ffffff'"
+               style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-truck fs-4 text-accent-pink"></i>
+                <h6 class="fw-bold text-navy-primary mb-0">Doorstep Pickup & Drop</h6>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-navy-deep border fw-bold small">+ ₹300</span>
+                <i class="bi fs-5" [ngClass]="pickupDropRequired() ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'" [style.color]="pickupDropRequired() ? '#198754' : ''"></i>
+              </div>
+            </div>
+            <p class="text-muted small mb-3">A verified technician picks up your car and returns it after service.</p>
+            <div class="d-flex justify-content-end">
+              <span *ngIf="pickupDropRequired()" class="badge text-white small px-2.5 py-1 fw-bold shadow-sm" style="background-color: #198754; font-size: 0.75rem;">
+                <i class="bi bi-check-lg me-1"></i> Selected
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+        <button (click)="goToStep(3)" class="btn btn-outline-secondary py-2 px-3">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button (click)="goToStep(5)" class="btn btn-sm-primary py-2 px-4 shadow-sm">
+          Next: Review Summary <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 5: REVIEW SUMMARY & CONFIRM           -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 5" class="brand-card p-4">
+      <div class="mb-3">
+        <h5 class="fw-bold text-navy-primary mb-1">Step 5: Review Booking Summary</h5>
+        <p class="text-muted small mb-0">Verify your appointment details before final confirmation</p>
+      </div>
+
+      <!-- Itemized Breakdown Box -->
+      <div class="p-3 rounded-3 bg-light border mb-4">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <span class="text-muted small d-block">Vehicle</span>
+            <strong class="text-navy-primary">{{ selectedVehicle()?.make }} {{ selectedVehicle()?.model }}</strong>
+            <span class="font-monospace small d-block text-muted">{{ selectedVehicle()?.registrationNumber }}</span>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <span class="text-muted small d-block">Service Package(s)</span>
+            <strong class="text-navy-primary">{{ selectedServicesSummary }}</strong>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <span class="text-muted small d-block">Date</span>
+            <strong class="text-navy-primary">{{ selectedDate() }}</strong>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <span class="text-muted small d-block">Time Slot</span>
+            <strong class="text-navy-primary">{{ selectedSlot()?.label }}</strong>
+          </div>
+        </div>
+
+        <hr class="my-3" style="border-color: rgba(13,30,76,0.1);" />
+
+        <!-- Cost Breakdown Table -->
+        <div *ngFor="let s of selectedServices()" class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">{{ s.displayName }}:</span>
+          <span class="fw-semibold">₹{{ s.basePrice | number }}</span>
+        </div>
+        <div class="d-flex justify-content-between small mb-2">
+          <span class="text-muted">Doorstep Pickup & Drop:</span>
+          <span class="fw-semibold">{{ pickupDropRequired() ? '₹300' : '₹0 (Self Drop)' }}</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+          <div>
+            <strong class="text-navy-primary fs-6">Estimated Total:</strong>
+            <span class="text-muted small d-block" style="font-size: 0.72rem;">*Payable at delivery after inspection & work completion</span>
+          </div>
+          <span class="h4 mb-0 fw-bold" style="color: var(--color-primary-navy) !important;">
+            ₹{{ estimatedTotalAmount | number }}
+          </span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between pt-2">
+        <button (click)="goToStep(4)" class="btn btn-outline-secondary py-2 px-3" [disabled]="isSubmitting()">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button (click)="confirmAndBook()" class="btn btn-sm-primary py-2 px-4 shadow-sm" [disabled]="isSubmitting()">
+          <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span *ngIf="!isSubmitting()"><i class="bi bi-check-circle-fill me-1"></i> Confirm Appointment</span>
+          <span *ngIf="isSubmitting()">Securing Slot...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 6: CONFIRMATION RECEIPT               -->
+    <!-- ========================================== -->
+    <div *ngIf="currentStep() === 6 && confirmedBooking()" class="brand-card brand-card-accent p-4 text-center my-3">
+      <div class="bg-white rounded-circle p-3 d-inline-flex align-items-center justify-content-center shadow-sm mb-3" style="width: 72px; height: 72px;">
+        <i class="bi bi-check2-circle fs-1 text-success"></i>
+      </div>
+
+      <h4 class="fw-bold text-navy-primary mb-1">Service Appointment Confirmed!</h4>
+      <p class="text-muted small mb-3">Your bay slot has been reserved. A confirmation receipt has been added to your profile.</p>
+
+      <div class="p-3 bg-white rounded-3 border text-start mx-auto mb-4" style="max-width: 500px;">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Booking Reference:</span>
+          <span class="font-monospace fw-bold text-navy-primary">#BK-{{ confirmedBooking()?.id }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Vehicle:</span>
+          <span class="fw-semibold">{{ confirmedBooking()?.vehicleMake }} {{ confirmedBooking()?.vehicleModel }} ({{ confirmedBooking()?.vehicleRegistrationNumber }})</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Service Package:</span>
+          <span class="fw-semibold">{{ confirmedBooking()?.serviceTypeDisplayName }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Appointment:</span>
+          <span class="fw-semibold">{{ confirmedBooking()?.bookingDate }} &bull; {{ confirmedBooking()?.timeSlotLabel }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Pickup & Drop:</span>
+          <span class="fw-semibold">{{ confirmedBooking()?.pickupDropRequired ? 'Yes (+ ₹300)' : 'No (Self Drop)' }}</span>
+        </div>
+        <div class="d-flex justify-content-between pt-2 border-top">
+          <strong class="text-navy-primary">Estimated Amount:</strong>
+          <strong class="text-navy-primary">₹{{ confirmedBooking()?.estimatedTotalAmount | number }}</strong>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-center gap-2">
+        <button (click)="viewAllBookings()" class="btn btn-sm-primary py-2 px-4 shadow-sm">
+          <i class="bi bi-card-checklist me-1"></i> View All Bookings
+        </button>
+        <a routerLink="/customer/dashboard" class="btn btn-outline-secondary py-2 px-3">
+          Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

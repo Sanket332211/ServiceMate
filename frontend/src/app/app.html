@@ -1,0 +1,70 @@
+<!-- ServiceMate Main Navigation Header -->
+<header class="navbar navbar-expand-lg navbar-dark brand-gradient py-3 shadow-sm">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4" routerLink="/">
+      <i class="bi bi-tools text-soft-blue"></i>
+      <span class="text-white">Service<span class="text-accent-pink">Mate</span></span>
+    </a>
+
+    <span class="navbar-text text-white-50 small d-none d-md-inline">
+      Smart Car Service Management System
+    </span>
+
+    <div class="d-flex align-items-center gap-2">
+      <!-- When Logged In -->
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <!-- Service Center Navigation Links -->
+        <ng-container *ngIf="authService.isServiceCenter()">
+          <a routerLink="/service-center/dashboard" class="btn btn-sm btn-outline-light py-1 px-2 text-decoration-none d-none d-sm-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+          <a routerLink="/service-center/bookings" class="btn btn-sm btn-sm-primary py-1 px-2 text-decoration-none fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            <i class="bi bi-kanban-fill"></i> Workshop Queue
+          </a>
+        </ng-container>
+
+        <!-- Customer Navigation Links -->
+        <ng-container *ngIf="authService.isCustomer()">
+          <a routerLink="/customer/dashboard" class="btn btn-sm btn-outline-light py-1 px-2 text-decoration-none d-none d-sm-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+          <a routerLink="/customer/vehicles" class="btn btn-sm btn-outline-light py-1 px-2 text-decoration-none d-none d-md-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            <i class="bi bi-car-front"></i> Garage
+          </a>
+          <a routerLink="/customer/bookings/new" class="btn btn-sm btn-sm-primary py-1 px-2 text-decoration-none fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+            <i class="bi bi-calendar2-plus"></i> Book
+          </a>
+        </ng-container>
+
+        <!-- In-App Notification Bell Component -->
+        <app-notification-bell class="ms-1 me-1"></app-notification-bell>
+
+        <span class="status-badge ms-1" [ngClass]="authService.isServiceCenter() ? 'badge-sm-primary' : 'badge-sm-accent'">
+          <i class="bi" [ngClass]="authService.isServiceCenter() ? 'bi-shield-shaded' : 'bi-person-check-fill'"></i>
+          {{ authService.currentUserSignal()?.role }}
+        </span>
+        <span class="text-white small d-none d-lg-inline fw-semibold ms-1">
+          {{ authService.currentUserSignal()?.name }}
+        </span>
+        <button (click)="onLogout()" class="btn btn-sm btn-outline-light ms-2 py-1 px-2" style="font-size: 0.8rem;">
+          <i class="bi bi-box-arrow-right"></i> Sign Out
+        </button>
+      </ng-container>
+
+      <!-- When Not Logged In -->
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <a routerLink="/login" class="btn btn-sm btn-outline-light py-1 px-3" style="font-size: 0.85rem;">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+        </a>
+        <a routerLink="/register" class="btn btn-sm btn-sm-primary py-1 px-3" style="font-size: 0.85rem;">
+          <i class="bi bi-person-plus me-1"></i> Register
+        </a>
+      </ng-container>
+    </div>
+  </div>
+</header>
+
+<!-- Main Application Routing Canvas (#E5C9D7 Blush Page Background) -->
+<main class="container my-4">
+  <router-outlet></router-outlet>
+</main>

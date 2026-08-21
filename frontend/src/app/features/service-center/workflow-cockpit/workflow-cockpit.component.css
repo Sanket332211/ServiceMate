@@ -1,0 +1,213 @@
+.cockpit-page {
+  min-height: calc(100vh - 140px);
+  background-color: var(--bg-blush, #E5C9D7);
+}
+
+.back-link {
+  color: var(--primary-dark-navy, #0D1E4C);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  color: var(--color-pink, #C48CB3);
+}
+
+.page-title {
+  color: var(--primary-dark-navy, #0D1E4C);
+  font-weight: 800;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(13, 30, 76, 0.06);
+}
+
+.car-badge-header {
+  background: linear-gradient(135deg, rgba(13, 30, 76, 0.06), rgba(196, 140, 179, 0.12));
+  border: 1px solid rgba(131, 166, 206, 0.25);
+}
+
+.text-navy {
+  color: var(--primary-dark-navy, #0D1E4C) !important;
+}
+
+.bg-navy {
+  background-color: var(--primary-dark-navy, #0D1E4C) !important;
+}
+
+.text-accent {
+  color: var(--color-pink, #C48CB3) !important;
+}
+
+.bg-accent {
+  background-color: var(--color-pink, #C48CB3) !important;
+  color: #ffffff;
+}
+
+.btn-accent-custom {
+  background-color: var(--color-pink, #C48CB3);
+  border-color: var(--color-pink, #C48CB3);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-accent-custom:hover {
+  background-color: #a86c97;
+  border-color: #a86c97;
+  color: #ffffff;
+}
+
+.btn-primary-custom {
+  background-color: var(--primary-dark-navy, #0D1E4C);
+  border-color: var(--primary-dark-navy, #0D1E4C);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.btn-primary-custom:hover {
+  background-color: #1e3a6d;
+  border-color: #1e3a6d;
+  color: #ffffff;
+}
+
+.btn-outline-custom {
+  border: 1.5px solid var(--primary-dark-navy, #0D1E4C);
+  color: var(--primary-dark-navy, #0D1E4C);
+  background: transparent;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.btn-outline-custom:hover {
+  background-color: var(--primary-dark-navy, #0D1E4C);
+  color: #ffffff;
+}
+
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.92rem;
+}
+
+.detail-label {
+  color: #4a5568;
+}
+
+.detail-value {
+  color: #1a202c;
+  font-weight: 500;
+}
+
+.status-pill {
+  padding: 0.5rem 1rem;
+  border-radius: 50rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.border-warning-custom {
+  border: 2px solid #eab308 !important;
+}
+
+.text-warning-custom {
+  color: #a16207 !important;
+}
+
+/* Timeline */
+.milestone-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.milestone-step {
+  display: flex;
+  gap: 1rem;
+}
+
+.marker-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+}
+
+.milestone-marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  border: 2px solid #cbd5e1;
+}
+
+.timeline-line {
+  flex-grow: 1;
+  width: 2px;
+  background: #cbd5e1;
+  min-height: 35px;
+  margin: 3px 0;
+}
+
+.milestone-step.completed .milestone-marker {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.milestone-step.completed .timeline-line {
+  background: #10b981;
+}
+
+.milestone-step.active .milestone-marker {
+  background: var(--color-pink, #C48CB3);
+  color: #ffffff;
+  border-color: var(--primary-dark-navy, #0D1E4C);
+  box-shadow: 0 0 0 3px rgba(196, 140, 179, 0.35);
+}
+
+.milestone-step.active .milestone-title {
+  color: var(--primary-dark-navy, #0D1E4C);
+  font-weight: bold;
+}
+
+/* Modal */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(11, 27, 50, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+}

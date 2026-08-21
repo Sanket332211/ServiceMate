@@ -1,0 +1,179 @@
+<div class="row justify-content-center py-4">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="brand-card brand-card-navy p-4 p-md-5">
+      <!-- Header Branding -->
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-navy-primary text-white rounded-circle mb-3 shadow-sm" style="width: 64px; height: 64px;">
+          <i class="bi bi-person-plus fs-2 text-accent-pink"></i>
+        </div>
+        <h3 class="fw-bold text-navy-primary mb-1">
+          Create Your Account
+        </h3>
+        <p class="text-muted small">Join ServiceMate to book and track your car services in real-time</p>
+      </div>
+
+      <!-- General Server Error Alert -->
+      <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center gap-2 small py-2 px-3 mb-4 rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>{{ errorMessage() }}</div>
+      </div>
+
+      <!-- Registration Form -->
+      <form (ngSubmit)="onSubmit()" novalidate>
+        <!-- Full Name -->
+        <div class="mb-3">
+          <label for="regName" class="form-label small fw-bold text-navy-primary">Full Name <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+            <input
+              type="text"
+              id="regName"
+              class="form-control border-start-0"
+              [class.is-invalid]="(isSubmitted || touched['name']) && !!getNameError()"
+              placeholder="e.g. Rahul Sharma"
+              [(ngModel)]="name"
+              (ngModelChange)="onFieldChange('name')"
+              (blur)="markTouched('name')"
+              name="name"
+              required
+            />
+          </div>
+          <div class="invalid-feedback d-block small mt-1" *ngIf="(isSubmitted || touched['name']) && getNameError()">
+            {{ getNameError() }}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <!-- Email Address -->
+          <div class="col-md-6">
+            <label for="regEmail" class="form-label small fw-bold text-navy-primary">Email Address <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+              <input
+                type="email"
+                id="regEmail"
+                class="form-control border-start-0"
+                [class.is-invalid]="(isSubmitted || touched['email']) && !!getEmailError()"
+                placeholder="name@example.com"
+                [(ngModel)]="email"
+                (ngModelChange)="onFieldChange('email')"
+                (blur)="markTouched('email')"
+                name="email"
+                required
+              />
+            </div>
+            <div class="invalid-feedback d-block small mt-1" *ngIf="(isSubmitted || touched['email']) && getEmailError()">
+              {{ getEmailError() }}
+            </div>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="col-md-6">
+            <label for="regPhone" class="form-label small fw-bold text-navy-primary">Phone Number</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone text-muted"></i></span>
+              <input
+                type="tel"
+                id="regPhone"
+                class="form-control border-start-0"
+                [class.is-invalid]="(isSubmitted || touched['phone']) && !!getPhoneError()"
+                placeholder="9876543210 (Optional)"
+                [(ngModel)]="phone"
+                (ngModelChange)="onFieldChange('phone')"
+                (blur)="markTouched('phone')"
+                name="phone"
+              />
+            </div>
+            <div class="invalid-feedback d-block small mt-1" *ngIf="(isSubmitted || touched['phone']) && getPhoneError()">
+              {{ getPhoneError() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <!-- Password -->
+          <div class="col-md-6">
+            <label for="regPassword" class="form-label small fw-bold text-navy-primary">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="regPassword"
+                class="form-control border-start-0 border-end-0"
+                [class.is-invalid]="(isSubmitted || touched['password']) && !!getPasswordError()"
+                placeholder="Min. 8 chars"
+                [(ngModel)]="password"
+                (ngModelChange)="onFieldChange('password')"
+                (blur)="markTouched('password')"
+                name="password"
+                required
+              />
+              <button
+                type="button"
+                class="btn btn-outline-secondary border-start-0 bg-light text-muted"
+                (click)="toggleShowPassword()"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                title="{{ showPassword ? 'Hide password' : 'Show password' }}"
+              >
+                <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback d-block small mt-1" *ngIf="(isSubmitted || touched['password']) && getPasswordError()">
+              {{ getPasswordError() }}
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="col-md-6">
+            <label for="regConfirmPassword" class="form-label small fw-bold text-navy-primary">Confirm Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-check-circle text-muted"></i></span>
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                id="regConfirmPassword"
+                class="form-control border-start-0 border-end-0"
+                [class.is-invalid]="(isSubmitted || touched['confirmPassword']) && !!getConfirmPasswordError()"
+                placeholder="Repeat password"
+                [(ngModel)]="confirmPassword"
+                (ngModelChange)="onFieldChange('confirmPassword')"
+                (blur)="markTouched('confirmPassword')"
+                name="confirmPassword"
+                required
+              />
+              <button
+                type="button"
+                class="btn btn-outline-secondary border-start-0 bg-light text-muted"
+                (click)="toggleShowConfirmPassword()"
+                [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'"
+                title="{{ showConfirmPassword ? 'Hide password' : 'Show password' }}"
+              >
+                <i class="bi" [ngClass]="showConfirmPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback d-block small mt-1" *ngIf="(isSubmitted || touched['confirmPassword']) && getConfirmPasswordError()">
+              {{ getConfirmPasswordError() }}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-sm-primary w-100 py-2 fs-6 shadow-sm mb-3"
+          [disabled]="isLoading()"
+        >
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span *ngIf="!isLoading()"><i class="bi bi-person-check me-1"></i> Complete Registration</span>
+          <span *ngIf="isLoading()">Creating account...</span>
+        </button>
+      </form>
+
+      <!-- Login Link -->
+      <div class="text-center pt-2 border-top">
+        <p class="small text-muted mb-0">
+          Already registered?
+          <a routerLink="/login" class="fw-bold text-accent-pink text-decoration-none ms-1">Sign In</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

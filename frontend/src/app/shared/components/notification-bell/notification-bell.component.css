@@ -1,0 +1,131 @@
+/* Notification Bell Container and Button */
+.notification-bell-container {
+  display: inline-block;
+}
+
+.btn-icon-bell {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transition: all 0.2s ease-in-out;
+  width: 34px;
+  height: 34px;
+}
+
+.btn-icon-bell:hover,
+.btn-icon-bell.active {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Floating Dropdown Window */
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 360px;
+  max-width: 90vw;
+  background: #ffffff;
+  border: 1px solid var(--sm-border-subtle, #f0dde5) !important;
+  border-radius: 12px !important;
+  z-index: 1050;
+  box-shadow: 0 12px 32px rgba(27, 42, 74, 0.18) !important;
+  animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header-custom {
+  background-color: #faf7f9;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* Scrollable Notification List */
+.notification-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  transition: background-color 0.15s ease;
+  background-color: #ffffff;
+}
+
+.notification-item:hover {
+  background-color: #fdf5f8;
+}
+
+.notification-item.unread-item {
+  background-color: #fcf1f5;
+}
+
+.notification-item.unread-item:hover {
+  background-color: #fae6ed;
+}
+
+.notif-icon-box {
+  width: 32px;
+  height: 32px;
+  background-color: #f0edf3;
+  font-size: 0.85rem;
+}
+
+.unread-item .notif-icon-box {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.unread-dot {
+  color: #db2777;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.read-dot {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.bg-soft-pink {
+  background-color: #fce7f3;
+}
+
+/* Custom Slim Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 300px;
+    right: -50px;
+  }
+}

@@ -1,0 +1,745 @@
+<div class="cockpit-page py-4">
+  <div class="container-fluid px-lg-5">
+    <!-- Top Navigation & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <a routerLink="/service-center/bookings" class="back-link mb-2 d-inline-flex align-items-center gap-1">
+          <i class="bi bi-arrow-left"></i> Back to Workshop Queue
+        </a>
+        <h2 class="page-title mb-0">
+          <i class="bi bi-speedometer2 me-2 text-accent"></i>Bay Operations Cockpit #{{ bookingId() }}
+        </h2>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-custom d-inline-flex align-items-center gap-1"
+          *ngIf="workflow()"
+          [disabled]="isDownloadingPdf()"
+          (click)="downloadPassportPdf()"
+          title="Download Complete Vehicle Service Passport PDF"
+        >
+          <span *ngIf="isDownloadingPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+          <i *ngIf="!isDownloadingPdf()" class="bi bi-file-earmark-pdf-fill"></i>
+          <span>{{ isDownloadingPdf() ? 'Downloading...' : 'Vehicle Passport PDF' }}</span>
+        </button>
+        <button class="btn btn-outline-custom" (click)="loadWorkflow(); loadCompletionDetails()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh Bay
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div *ngIf="errorMessage()" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+    </div>
+
+    <div *ngIf="successMessage()" class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage() }}
+    </div>
+
+    <div *ngIf="isLoading()" class="text-center py-5">
+      <div class="spinner-border text-accent" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading bay operations telemetry...</span>
+      </div>
+      <p class="mt-3 text-muted">Retrieving workshop bay status...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && workflow() as wf" class="row g-4">
+      <!-- Left Column: Operations Stage Actions, Completion Form & Additional Repairs -->
+      <div class="col-lg-7">
+        <!-- Workshop Operational Actions Card -->
+        <div class="glass-card p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+              <h5 class="card-title mb-1 text-navy">
+                <i class="bi bi-gear-wide-connected me-2 text-accent"></i>Workflow Control Center
+              </h5>
+              <p class="text-muted small mb-0">Execute sequential workshop milestones and technician actions.</p>
+            </div>
+            <span
+              *ngIf="wf.bookingStatus === 'CANCELLED'"
+              class="badge bg-danger fs-6 px-3 py-2 shadow-sm"
+            >
+              <i class="bi bi-x-circle-fill me-1"></i> CANCELLED
+            </span>
+            <span
+              *ngIf="wf.bookingStatus !== 'CANCELLED'"
+              class="badge status-pill fs-6"
+              [ngClass]="{
+                'bg-warning text-dark': wf.workflowStatus === 'AWAITING_APPROVAL',
+                'bg-success': wf.workflowStatus === 'COMPLETED',
+                'bg-accent': wf.workflowStatus && wf.workflowStatus !== 'AWAITING_APPROVAL' && wf.workflowStatus !== 'COMPLETED',
+                'bg-light text-dark border': !wf.workflowStatus
+              }"
+            >
+              {{ wf.workflowStatusDisplayName || 'Vehicle Not Received Yet' }}
+            </span>
+          </div>
+
+          <!-- Cancelled Booking Protection Banner -->
+          <div *ngIf="wf.bookingStatus === 'CANCELLED'" class="alert alert-danger d-flex align-items-center gap-3 p-4 rounded-3 mb-0">
+            <i class="bi bi-x-circle-fill fs-1 text-danger"></i>
+            <div>
+              <h5 class="fw-bold text-danger mb-1">Booking Cancelled</h5>
+              <div class="text-muted small">This booking has been cancelled and workshop workflow actions are unavailable.</div>
+            </div>
+          </div>
+
+          <div *ngIf="wf.bookingStatus !== 'CANCELLED'">
+            <!-- Pending Customer Approval Warning Banner -->
+            <div *ngIf="wf.workflowStatus === 'AWAITING_APPROVAL'" class="alert alert-warning d-flex align-items-center gap-3 p-3 mb-4 rounded-3 border-warning-custom">
+              <i class="bi bi-clock-history fs-3 text-warning-custom"></i>
+              <div>
+                <div class="fw-bold text-dark">Awaiting Customer Authorization</div>
+                <div class="small text-muted">Service workflow is temporarily paused while customer reviews the additional repair discovery. Once authorized or declined, service will resume.</div>
+              </div>
+            </div>
+
+            <!-- Operational Transition Actions -->
+            <div class="action-buttons-grid d-flex flex-column gap-3">
+              <!-- Step 1: Receive Vehicle -->
+              <div *ngIf="!wf.workflowStatus" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border">
+                <div>
+                  <div class="fw-bold text-navy">1. Intake & Vehicle Arrival</div>
+                  <div class="text-muted small">Mark vehicle as physically received at the workshop bay.</div>
+                </div>
+                <button
+                  class="btn btn-accent-custom px-4"
+                  [disabled]="isTransitioning()"
+                  (click)="receiveVehicle()"
+                >
+                  <i class="bi bi-box-arrow-in-down-right me-1"></i> Receive Vehicle
+                </button>
+              </div>
+
+              <!-- Step 2: Start Inspection -->
+              <div *ngIf="wf.workflowStatus === 'CAR_RECEIVED'" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border">
+                <div>
+                  <div class="fw-bold text-navy">2. Start 40-Point Inspection</div>
+                  <div class="text-muted small">Begin mechanical diagnosis, brake wear, fluid check, and diagnostics.</div>
+                </div>
+                <button
+                  class="btn btn-primary-custom px-4"
+                  [disabled]="isTransitioning()"
+                  (click)="startInspection()"
+                >
+                  <i class="bi bi-search me-1"></i> Start Inspection
+                </button>
+              </div>
+
+              <!-- Step 3: Start Service -->
+              <div *ngIf="wf.workflowStatus === 'INSPECTION'" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border">
+                <div>
+                  <div class="fw-bold text-navy">3. Commence Scheduled Service</div>
+                  <div class="text-muted small">Start oil replacement, filter changes, scheduled package tune-up.</div>
+                </div>
+                <button
+                  class="btn btn-primary-custom px-4"
+                  [disabled]="isTransitioning()"
+                  (click)="startService()"
+                >
+                  <i class="bi bi-tools me-1"></i> Start Service Work
+                </button>
+              </div>
+
+              <!-- Step 4: Quality Check -->
+              <div *ngIf="wf.workflowStatus === 'SERVICE_IN_PROGRESS' || wf.workflowStatus === 'AWAITING_APPROVAL'" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border flex-wrap gap-2">
+                <div>
+                  <div class="fw-bold text-navy">4. Quality Assurance & Diagnostics</div>
+                  <div class="text-muted small">Move to inspection findings review, technician report & invoice prep.</div>
+                </div>
+                <button
+                  class="btn btn-accent-custom px-4"
+                  [disabled]="isTransitioning() || wf.workflowStatus === 'AWAITING_APPROVAL'"
+                  (click)="startQualityCheck()"
+                >
+                  <i class="bi bi-shield-check me-1"></i> Move to Quality Check
+                </button>
+              </div>
+
+              <!-- Step 5: Ready for Delivery -->
+              <div *ngIf="wf.workflowStatus === 'QUALITY_CHECK'" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border flex-wrap gap-2">
+                <div>
+                  <div class="fw-bold text-navy">5. Finalize Dossier & Mark Ready for Handover</div>
+                  <div class="text-muted small">Requires saved mileage, summary, service items, and inspection findings below.</div>
+                </div>
+                <button
+                  class="btn btn-success px-4"
+                  [disabled]="isTransitioning()"
+                  (click)="markReadyForDelivery()"
+                >
+                  <i class="bi bi-check2-all me-1"></i> Mark Ready for Delivery
+                </button>
+              </div>
+
+              <!-- Step 6: Complete Service -->
+              <div *ngIf="wf.workflowStatus === 'READY_FOR_DELIVERY'" class="d-flex align-items-center justify-content-between p-3 bg-light rounded border flex-wrap gap-2">
+                <div>
+                  <div class="fw-bold text-navy">6. Handover Complete / Service Closure</div>
+                  <div class="text-muted small">Deliver vehicle to customer or complete valet return.</div>
+                </div>
+                <button
+                  class="btn btn-dark px-4"
+                  [disabled]="isTransitioning()"
+                  (click)="completeService()"
+                >
+                  <span *ngIf="isTransitioning()" class="spinner-border spinner-border-sm me-1"></span>
+                  <i *ngIf="!isTransitioning()" class="bi bi-hand-thumbs-up me-1"></i> Complete & Close Booking
+                </button>
+              </div>
+
+              <!-- Completed State -->
+              <div *ngIf="wf.workflowStatus === 'COMPLETED'" class="alert alert-success d-flex justify-content-between align-items-center p-3 mb-0 rounded flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle-fill fs-4 text-success"></i>
+                  <div>
+                    <div class="fw-bold">Service Successfully Completed & Certified</div>
+                    <div class="small text-muted">Vehicle odometer updated to {{ completionRecord()?.mileage || wf.vehicleCurrentMileage }} km. Passport finalized.</div>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
+                    [disabled]="isDownloadingVisitPdf()"
+                    (click)="downloadVisitPdf()"
+                    title="Download Current Service Visit PDF"
+                  >
+                    <span *ngIf="isDownloadingVisitPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+                    <i *ngIf="!isDownloadingVisitPdf()" class="bi bi-file-earmark-pdf"></i>
+                    <span>{{ isDownloadingVisitPdf() ? 'Downloading...' : 'Download Visit PDF' }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
+                    [disabled]="isDownloadingPdf()"
+                    (click)="downloadPassportPdf()"
+                    title="Download Complete Vehicle History PDF"
+                  >
+                    <span *ngIf="isDownloadingPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+                    <i *ngIf="!isDownloadingPdf()" class="bi bi-file-earmark-pdf-fill"></i>
+                    <span>{{ isDownloadingPdf() ? 'Downloading...' : 'Download Passport PDF' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Workshop Internal Notes -->
+            <div class="mt-4 border-top pt-3">
+              <label class="form-label fw-bold text-navy small">
+                <i class="bi bi-pencil-square me-1 text-accent"></i>Technician Notes & Bay Comments:
+              </label>
+              <textarea
+                class="form-control"
+                rows="2"
+                placeholder="e.g. Brake fluid topped up, tires rotated, left mirror inspected..."
+                [value]="notes()"
+                (input)="notes.set($any($event.target).value)"
+              ></textarea>
+              <div class="text-muted small mt-1">Notes are saved when you advance workflow milestones.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Completion Details & Dossier Form (Active in QUALITY_CHECK, READY_FOR_DELIVERY, COMPLETED) -->
+        <div *ngIf="wf.bookingStatus !== 'CANCELLED' && (wf.workflowStatus === 'QUALITY_CHECK' || wf.workflowStatus === 'READY_FOR_DELIVERY' || wf.workflowStatus === 'COMPLETED')" class="glass-card p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+            <div>
+              <h5 class="card-title mb-0 text-navy">
+                <i class="bi bi-clipboard2-check-fill me-2 text-accent"></i>Service Completion & Final Dossier Entry
+              </h5>
+              <div class="text-muted small">Record service mileage, itemized parts, fluids, labour, and 40-point diagnostics.</div>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <button
+                *ngIf="completionRecord()?.id"
+                type="button"
+                class="btn btn-sm btn-outline-custom d-inline-flex align-items-center gap-1 shadow-sm"
+                [disabled]="isDownloadingVisitPdf()"
+                (click)="downloadVisitPdf()"
+                title="Download Finalized Visit Record PDF"
+              >
+                <span *ngIf="isDownloadingVisitPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+                <i *ngIf="!isDownloadingVisitPdf()" class="bi bi-file-earmark-pdf"></i>
+                <span>Download Visit PDF</span>
+              </button>
+              <button
+                *ngIf="wf.workflowStatus === 'QUALITY_CHECK' || wf.workflowStatus === 'READY_FOR_DELIVERY'"
+                type="button"
+                class="btn btn-sm btn-accent-custom d-flex align-items-center gap-1"
+                [disabled]="isSavingCompletion()"
+                (click)="saveCompletionDetails()"
+              >
+                <span *ngIf="isSavingCompletion()" class="spinner-border spinner-border-sm"></span>
+                <i *ngIf="!isSavingCompletion()" class="bi bi-save-fill"></i> Save Details
+              </button>
+            </div>
+          </div>
+
+          <form [formGroup]="completionForm">
+            <!-- Mileage & Service Summary -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-navy small">Service Mileage (km) *</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  placeholder="e.g. 26500"
+                  formControlName="mileage"
+                  [readonly]="wf.workflowStatus === 'COMPLETED'"
+                />
+                <div class="form-text small" style="font-size: 0.75rem;">Vehicle stored: {{ wf.vehicleCurrentMileage | number }} km</div>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-semibold text-navy small">Technician Service Summary *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="e.g. Engine oil replaced, OEM filter installed, 40-point check passed."
+                  formControlName="serviceSummary"
+                  [readonly]="wf.workflowStatus === 'COMPLETED'"
+                />
+              </div>
+            </div>
+
+            <!-- Itemized Work Performed & Replaced Parts -->
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-bold text-navy small mb-0">
+                  <i class="bi bi-tools text-accent me-1"></i>Work Performed & Replaced Parts (Base Service) *
+                </label>
+                <button
+                  *ngIf="wf.workflowStatus !== 'COMPLETED'"
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-2"
+                  style="font-size: 0.8rem;"
+                  (click)="addItem()"
+                >
+                  <i class="bi bi-plus-circle me-1"></i> Add Item
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead class="table-light small">
+                    <tr>
+                      <th style="width: 45%;">Description</th>
+                      <th style="width: 20%;">Category</th>
+                      <th style="width: 12%;" class="text-center">Qty</th>
+                      <th style="width: 15%;" class="text-end">Unit (₹)</th>
+                      <th *ngIf="wf.workflowStatus !== 'COMPLETED'" style="width: 8%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="items">
+                    <tr *ngFor="let itemCtrl of itemsArray.controls; let idx = index" [formGroupName]="idx">
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="description"
+                          placeholder="e.g. Synthetic Oil 5W30"
+                          [readonly]="wf.workflowStatus === 'COMPLETED'"
+                        />
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" formControlName="category" [disabled]="wf.workflowStatus === 'COMPLETED'">
+                          <option value="FLUIDS">FLUIDS</option>
+                          <option value="PARTS">PARTS</option>
+                          <option value="LABOUR">LABOUR</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm text-center"
+                          formControlName="quantity"
+                          min="1"
+                          [readonly]="wf.workflowStatus === 'COMPLETED'"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm text-end"
+                          formControlName="unitPrice"
+                          min="0"
+                          [readonly]="wf.workflowStatus === 'COMPLETED'"
+                        />
+                      </td>
+                      <td *ngIf="wf.workflowStatus !== 'COMPLETED'" class="text-center">
+                        <button type="button" class="btn btn-sm text-danger p-0" (click)="removeItem(idx)" [disabled]="itemsArray.length <= 1">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 40-Point Diagnostic Inspection Observations -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-bold text-navy small mb-0">
+                  <i class="bi bi-clipboard2-pulse-fill text-accent me-1"></i>40-Point Diagnostic Findings *
+                </label>
+                <button
+                  *ngIf="wf.workflowStatus !== 'COMPLETED'"
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-2"
+                  style="font-size: 0.8rem;"
+                  (click)="addFinding()"
+                >
+                  <i class="bi bi-plus-circle me-1"></i> Add Component
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead class="table-light small">
+                    <tr>
+                      <th style="width: 30%;">Component</th>
+                      <th style="width: 25%;">Condition</th>
+                      <th style="width: 37%;">Observations / Notes</th>
+                      <th *ngIf="wf.workflowStatus !== 'COMPLETED'" style="width: 8%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="inspectionFindings">
+                    <tr *ngFor="let findingCtrl of findingsArray.controls; let fIdx = index" [formGroupName]="fIdx">
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="component"
+                          placeholder="e.g. Brakes"
+                          [readonly]="wf.workflowStatus === 'COMPLETED'"
+                        />
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" formControlName="conditionStatus" [disabled]="wf.workflowStatus === 'COMPLETED'">
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                          <option value="Needs Attention">Needs Attention</option>
+                          <option value="Replaced">Replaced</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="notes"
+                          placeholder="Observations"
+                          [readonly]="wf.workflowStatus === 'COMPLETED'"
+                        />
+                      </td>
+                      <td *ngIf="wf.workflowStatus !== 'COMPLETED'" class="text-center">
+                        <button type="button" class="btn btn-sm text-danger p-0" (click)="removeFinding(fIdx)" [disabled]="findingsArray.length <= 1">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Live Calculation Footer -->
+            <div class="p-3 bg-light rounded border d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="small">
+                <span class="text-muted">Base Items:</span> <span class="fw-bold text-navy">₹{{ baseItemsSubtotal | number }}</span> •
+                <span class="text-muted">Approved Repairs:</span> <span class="fw-bold text-navy">₹{{ approvedRepairsTotal | number }}</span> •
+                <span class="text-muted">Valet:</span> <span class="fw-bold text-navy">₹{{ (wf.pickupDropRequired ? wf.pickupDropCharge : 0) | number }}</span>
+              </div>
+              <div class="fw-bold text-navy">
+                Grand Total: <span class="text-accent fs-6">₹{{ grandTotalCalculated | number }}</span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Additional Repair Findings Card -->
+        <div class="glass-card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h5 class="card-title mb-0 text-navy">
+                <i class="bi bi-clipboard2-pulse-fill me-2 text-accent"></i>Additional Repair Findings
+              </h5>
+              <div class="text-muted small">Report unexpected component wear or faults discovered during service for customer authorization.</div>
+            </div>
+            <button
+              *ngIf="wf.bookingStatus !== 'CANCELLED' && wf.workflowStatus !== 'COMPLETED'"
+              type="button"
+              class="btn btn-sm btn-accent-custom d-inline-flex align-items-center gap-1 shadow-sm"
+              [disabled]="wf.workflowStatus !== 'SERVICE_IN_PROGRESS' && wf.workflowStatus !== 'AWAITING_APPROVAL'"
+              (click)="openRepairModal()"
+              [title]="(wf.workflowStatus === 'SERVICE_IN_PROGRESS' || wf.workflowStatus === 'AWAITING_APPROVAL') ? 'Report an additional repair discovery' : 'Additional repairs can be reported once service is in progress (Milestone: Service in Progress)'"
+            >
+              <i class="bi bi-plus-circle-fill"></i> + Add Additional Repair
+            </button>
+          </div>
+
+          <!-- Empty State: No Repairs Recorded -->
+          <div *ngIf="!wf.additionalRepairs || wf.additionalRepairs.length === 0">
+            <!-- If service is in progress / awaiting approval: active prompt with action button -->
+            <div *ngIf="wf.bookingStatus !== 'CANCELLED' && (wf.workflowStatus === 'SERVICE_IN_PROGRESS' || wf.workflowStatus === 'AWAITING_APPROVAL')" class="text-center py-4 bg-light rounded border">
+              <i class="bi bi-clipboard2-plus text-muted fs-2 d-block mb-2"></i>
+              <div class="fw-semibold text-navy mb-1">No additional repair findings recorded.</div>
+              <p class="text-muted small mb-3 mx-auto" style="max-width: 450px;">
+                If additional mechanical wear or unexpected defects are discovered during vehicle servicing, report them here to request customer authorization.
+              </p>
+              <button
+                type="button"
+                class="btn btn-sm btn-accent-custom d-inline-flex align-items-center gap-1 shadow-sm"
+                (click)="openRepairModal()"
+              >
+                <i class="bi bi-plus-circle-fill"></i> + Add Additional Repair
+              </button>
+            </div>
+
+            <!-- If booking is active but not yet in service -->
+            <div *ngIf="wf.bookingStatus !== 'CANCELLED' && wf.workflowStatus !== 'SERVICE_IN_PROGRESS' && wf.workflowStatus !== 'AWAITING_APPROVAL' && wf.workflowStatus !== 'COMPLETED'" class="text-center py-4 bg-light rounded border">
+              <i class="bi bi-info-circle text-muted fs-3 d-block mb-2"></i>
+              <div class="fw-semibold text-navy mb-1">No additional repair findings recorded.</div>
+              <div class="text-muted small">Additional repairs can be discovered and reported once vehicle servicing commences (Milestone: Service in Progress).</div>
+            </div>
+
+            <!-- If booking is cancelled -->
+            <div *ngIf="wf.bookingStatus === 'CANCELLED'" class="text-muted text-center py-3 bg-light rounded border">
+              <i class="bi bi-x-circle text-danger fs-3 d-block mb-1"></i>
+              Booking is cancelled. No repairs can be recorded.
+            </div>
+
+            <!-- If booking is completed -->
+            <div *ngIf="wf.workflowStatus === 'COMPLETED'" class="text-muted text-center py-3 bg-light rounded border">
+              <i class="bi bi-check2-circle text-success fs-3 d-block mb-1"></i>
+              No additional repair findings were recorded for this service.
+            </div>
+          </div>
+
+          <!-- Populated State: Itemized Repair Cards -->
+          <div *ngIf="wf.additionalRepairs && wf.additionalRepairs.length > 0" class="d-flex flex-column gap-3">
+            <div *ngFor="let repair of wf.additionalRepairs" class="p-3 bg-light rounded-3 border">
+              <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i *ngIf="repair.status === 'PENDING'" class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                  <i *ngIf="repair.status === 'APPROVED'" class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <i *ngIf="repair.status === 'REJECTED'" class="bi bi-x-circle-fill text-secondary fs-5"></i>
+                  <span class="fw-bold text-navy fs-6">{{ repair.description }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-bold text-accent fs-6">₹{{ repair.estimatedAmount | number }}</span>
+                  <span
+                    class="badge"
+                    [ngClass]="{
+                      'bg-warning text-dark': repair.status === 'PENDING',
+                      'bg-success': repair.status === 'APPROVED',
+                      'bg-secondary': repair.status === 'REJECTED'
+                    }"
+                  >
+                    {{ repair.status === 'PENDING' ? 'PENDING CUSTOMER APPROVAL' : repair.status }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="small text-muted bg-white p-2.5 rounded border mb-2">
+                <strong class="text-navy">Reason:</strong> {{ repair.reason }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center text-muted small" style="font-size: 0.78rem;">
+                <span><i class="bi bi-clock me-1"></i>Reported: {{ repair.requestedAt | date:'medium' }}</span>
+                <span *ngIf="repair.respondedAt"><i class="bi bi-check-circle me-1"></i>Decision: {{ repair.respondedAt | date:'medium' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Vehicle, Customer Details & Workflow Progress -->
+      <div class="col-lg-5">
+        <!-- Customer & Vehicle Info Card -->
+        <div class="glass-card p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <h5 class="card-title mb-0 text-navy">
+              <i class="bi bi-car-front-fill me-2 text-accent"></i>Vehicle & Customer Specs
+            </h5>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-custom py-1 px-2 d-inline-flex align-items-center gap-1"
+              style="font-size: 0.78rem;"
+              [disabled]="isDownloadingPdf()"
+              (click)="downloadPassportPdf()"
+              title="Download Complete Vehicle History PDF"
+            >
+              <span *ngIf="isDownloadingPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+              <i *ngIf="!isDownloadingPdf()" class="bi bi-file-earmark-pdf-fill"></i>
+              <span>Passport PDF</span>
+            </button>
+          </div>
+
+          <div class="car-badge-header p-3 rounded mb-3">
+            <div class="fw-bold fs-5 text-navy">{{ wf.vehicleMake }} {{ wf.vehicleModel }}</div>
+            <div class="text-accent fw-bold font-monospace fs-6">{{ wf.vehicleRegistrationNumber }}</div>
+            <div class="text-muted small mt-1">
+              {{ wf.vehicleFuelType }} • {{ wf.vehicleTransmission }} • {{ wf.vehicleCurrentMileage | number }} km
+            </div>
+          </div>
+
+          <div class="detail-list">
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-person me-2 text-muted"></i>Customer:</span>
+              <span class="detail-value fw-semibold text-navy">{{ wf.customerName }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-envelope me-2 text-muted"></i>Email:</span>
+              <span class="detail-value">{{ wf.customerEmail }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-telephone me-2 text-muted"></i>Phone:</span>
+              <span class="detail-value">{{ wf.customerPhone || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-wrench me-2 text-muted"></i>Package:</span>
+              <span class="detail-value fw-semibold text-navy">{{ wf.serviceTypeDisplayName }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-calendar-event me-2 text-muted"></i>Scheduled:</span>
+              <span class="detail-value">{{ wf.bookingDate | date:'mediumDate' }} ({{ wf.timeSlotLabel }})</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-truck me-2 text-muted"></i>Valet:</span>
+              <span class="detail-value">
+                <span *ngIf="wf.pickupDropRequired" class="badge bg-success-subtle text-success">Valet Required (+₹{{ wf.pickupDropCharge }})</span>
+                <span *ngIf="!wf.pickupDropRequired" class="badge bg-light text-muted">Self Handover</span>
+              </span>
+            </div>
+            <div class="detail-row border-top pt-2 mt-2">
+              <span class="detail-label fw-bold text-navy">Base Package Estimate:</span>
+              <span class="detail-value fs-5 fw-bold text-accent">₹{{ wf.estimatedTotalAmount | number }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7-Milestone Visual Telemetry Timeline -->
+        <div class="glass-card p-4">
+          <h5 class="card-title mb-4 text-navy border-bottom pb-2">
+            <i class="bi bi-diagram-3 me-2 text-accent"></i>Milestone Telemetry
+          </h5>
+
+          <div class="milestone-timeline">
+            <div
+              *ngFor="let milestone of milestones; let last = last"
+              class="milestone-step"
+              [class.completed]="isMilestoneCompleted(milestone.key)"
+              [class.active]="isMilestoneActive(milestone.key)"
+            >
+              <div class="marker-container">
+                <div class="milestone-marker">
+                  <i class="bi" [ngClass]="isMilestoneCompleted(milestone.key) ? 'bi-check-lg' : milestone.icon"></i>
+                </div>
+                <div *ngIf="!last" class="timeline-line"></div>
+              </div>
+
+              <div class="milestone-content pb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <h6 class="milestone-title mb-0">{{ milestone.title }}</h6>
+                </div>
+                <p class="milestone-desc text-muted mb-0 small">{{ milestone.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Report Additional Repair Discovery -->
+<div *ngIf="showRepairModal()" class="modal-backdrop-custom d-flex align-items-center justify-content-center">
+  <div class="modal-card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+      <h5 class="modal-title mb-0 text-navy">
+        <i class="bi bi-tools me-2 text-accent"></i>Report Additional Repair Discovery
+      </h5>
+      <button type="button" class="btn-close" (click)="closeRepairModal()"></button>
+    </div>
+
+    <p class="text-muted small mb-3">
+      Submit an itemized technical finding. The customer will receive an instant notification to authorize or decline the repair.
+    </p>
+
+    <!-- Demonstration Examples for manual testing -->
+    <div class="p-3 mb-3 bg-light rounded border">
+      <div class="small fw-bold text-navy mb-2">
+        <i class="bi bi-magic text-accent me-1"></i> Sample Demo Templates (Click to fill):
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5" style="font-size: 0.8rem;" (click)="fillSampleRepair(1)">
+          <strong>Use Sample 1:</strong> Brake Pad Replacement (₹2,000)
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5" style="font-size: 0.8rem;" (click)="fillSampleRepair(2)">
+          <strong>Use Sample 2:</strong> Battery Replacement (₹4,500)
+        </button>
+      </div>
+      <div class="text-muted" style="font-size: 0.72rem;">
+        * Clicking a sample fills the form fields below for testing. It does not automatically create a database record.
+      </div>
+    </div>
+
+    <form [formGroup]="repairForm" (ngSubmit)="submitAdditionalRepair()">
+      <div class="mb-3">
+        <label class="form-label fw-semibold text-navy small">Repair Description *</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="e.g. Brake Pad Replacement"
+          formControlName="description"
+        />
+        <div *ngIf="repairForm.get('description')?.touched && repairForm.get('description')?.invalid" class="text-danger small mt-1">
+          Repair description is required (at least 3 characters).
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold text-navy small">Reason *</label>
+        <textarea
+          class="form-control"
+          rows="2"
+          placeholder="e.g. Brake pads show significant wear and should be replaced for safe braking."
+          formControlName="reason"
+        ></textarea>
+        <div *ngIf="repairForm.get('reason')?.touched && repairForm.get('reason')?.invalid" class="text-danger small mt-1">
+          Reason is required (at least 5 characters).
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold text-navy small">Estimated Amount (₹) *</label>
+        <div class="input-group">
+          <span class="input-group-text">₹</span>
+          <input
+            type="number"
+            class="form-control"
+            placeholder="e.g. 2000"
+            formControlName="estimatedAmount"
+          />
+        </div>
+        <div *ngIf="repairForm.get('estimatedAmount')?.touched && repairForm.get('estimatedAmount')?.invalid" class="text-danger small mt-1">
+          A valid estimated amount greater than 0 is required.
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeRepairModal()">Cancel</button>
+        <button
+          type="submit"
+          class="btn btn-accent-custom d-flex align-items-center gap-1"
+          [disabled]="isSubmittingRepair()"
+        >
+          <span *ngIf="isSubmittingRepair()" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!isSubmittingRepair()" class="bi bi-send-fill"></i> Submit Repair Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

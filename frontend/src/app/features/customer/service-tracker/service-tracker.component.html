@@ -1,0 +1,265 @@
+<div class="service-tracker-page py-4">
+  <div class="container">
+    <!-- Back to Bookings & Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <div>
+        <a routerLink="/customer/bookings" class="back-link mb-2 d-inline-flex align-items-center gap-1">
+          <i class="bi bi-arrow-left"></i> Back to My Bookings
+        </a>
+        <h2 class="page-title mb-0">
+          <i class="bi bi-speedometer2 me-2"></i>Live Service Tracker
+        </h2>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-custom btn-sm" (click)="loadWorkflow()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh Status
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div *ngIf="errorMessage()" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+    </div>
+
+    <div *ngIf="successMessage()" class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage() }}
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="text-center py-5">
+      <div class="spinner-border text-accent" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading service tracking milestones...</span>
+      </div>
+      <p class="mt-3 text-muted">Retrieving live service milestone telemetry...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && workflow() as wf" class="row g-4">
+      <!-- Left Column: Service Details & Pending Approvals -->
+      <div class="col-lg-5">
+        <!-- Vehicle & Booking Summary Card -->
+        <div class="glass-card mb-4 p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-car-front-fill me-2 text-accent"></i>Vehicle & Service Info
+            </h5>
+            <div class="d-flex align-items-center gap-2">
+              <span *ngIf="wf.bookingStatus === 'CANCELLED'" class="badge bg-danger px-2.5 py-1.5 shadow-sm">
+                <i class="bi bi-x-circle-fill me-1"></i> CANCELLED
+              </span>
+              <span class="badge bg-navy px-3 py-2">Booking #{{ wf.bookingId }}</span>
+            </div>
+          </div>
+
+          <div class="car-badge-header mb-3 p-3 rounded">
+            <div class="fw-bold fs-5 text-navy">{{ wf.vehicleMake }} {{ wf.vehicleModel }}</div>
+            <div class="text-accent fw-bold font-monospace fs-6">{{ wf.vehicleRegistrationNumber }}</div>
+          </div>
+
+          <div class="detail-list">
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-wrench-adjustable me-2 text-muted"></i>Package:</span>
+              <span class="detail-value fw-semibold text-navy">{{ wf.serviceTypeDisplayName }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-calendar-event me-2 text-muted"></i>Scheduled Date:</span>
+              <span class="detail-value">{{ wf.bookingDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-clock me-2 text-muted"></i>Time Slot:</span>
+              <span class="detail-value">{{ wf.timeSlotLabel }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><i class="bi bi-truck me-2 text-muted"></i>Valet Pickup/Drop:</span>
+              <span class="detail-value">
+                <span *ngIf="wf.pickupDropRequired" class="badge bg-success-subtle text-success">Included (+₹{{ wf.pickupDropCharge }})</span>
+                <span *ngIf="!wf.pickupDropRequired" class="badge bg-light text-muted">Self Handover</span>
+              </span>
+            </div>
+            <div class="detail-row border-top pt-2 mt-2">
+              <span class="detail-label fw-bold text-navy"><i class="bi bi-cash-stack me-2 text-muted"></i>Estimated Total:</span>
+              <span class="detail-value fs-5 fw-bold text-accent">₹{{ wf.estimatedTotalAmount | number }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- URGENT: Additional Repair Approvals Section -->
+        <div *ngIf="getPendingRepairs().length > 0" class="glass-card border-warning-custom p-4 mb-4 approval-pulse">
+          <div class="d-flex align-items-center gap-2 mb-3 text-warning-custom">
+            <i class="bi bi-exclamation-octagon-fill fs-4"></i>
+            <h5 class="mb-0 fw-bold">Customer Authorization Required</h5>
+          </div>
+          <p class="text-muted small mb-3">
+            During workshop inspection, our technician identified additional component attention. Please review the itemized discovery and authorize or decline:
+          </p>
+
+          <div *ngFor="let repair of getPendingRepairs()" class="repair-item-card p-3 mb-3 rounded">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="fw-bold text-navy fs-6">{{ repair.description }}</div>
+              <div class="text-accent fw-bold fs-5">₹{{ repair.estimatedAmount | number }}</div>
+            </div>
+            <div class="text-muted small mb-3 bg-white p-2 rounded border">
+              <strong>Technical Finding:</strong> {{ repair.reason }}
+            </div>
+
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-success flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                [disabled]="actionLoading() === repair.id"
+                (click)="approveRepair(repair)"
+              >
+                <span *ngIf="actionLoading() === repair.id" class="spinner-border spinner-border-sm me-1"></span>
+                <i *ngIf="actionLoading() !== repair.id" class="bi bi-check-circle-fill"></i> Approve & Repair
+              </button>
+
+              <button
+                class="btn btn-outline-danger flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                [disabled]="actionLoading() === repair.id"
+                (click)="rejectRepair(repair)"
+              >
+                <span *ngIf="actionLoading() === repair.id" class="spinner-border spinner-border-sm me-1"></span>
+                <i *ngIf="actionLoading() !== repair.id" class="bi bi-x-circle-fill"></i> Decline
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Previously Decided Additional Repairs -->
+        <div *ngIf="getResolvedRepairs().length > 0" class="glass-card p-4">
+          <h6 class="card-title mb-3 text-navy">
+            <i class="bi bi-clipboard-check me-2"></i>Additional Repair History
+          </h6>
+          <div *ngFor="let repair of getResolvedRepairs()" class="history-item p-3 mb-2 rounded border">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-semibold text-navy">{{ repair.description }}</span>
+              <span
+                class="badge"
+                [ngClass]="repair.status === 'APPROVED' ? 'bg-success' : 'bg-secondary'"
+              >
+                {{ repair.status }}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between text-muted small">
+              <span>₹{{ repair.estimatedAmount | number }}</span>
+              <span>{{ repair.respondedAt ? (repair.respondedAt | date:'shortTime') : '' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: 7-Milestone Stepper OR Cancelled State -->
+      <div class="col-lg-7">
+        <!-- Cancelled State -->
+        <div *ngIf="wf.bookingStatus === 'CANCELLED'" class="glass-card p-5 text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle p-3 mb-3 shadow-sm" style="background-color: rgba(220, 53, 69, 0.1); width: 72px; height: 72px;">
+            <i class="bi bi-calendar-x-fill text-danger fs-1"></i>
+          </div>
+          <h4 class="fw-bold text-navy mb-2">Booking Cancelled</h4>
+          <p class="text-muted mb-4 mx-auto" style="max-width: 480px; font-size: 0.95rem;">
+            This appointment has been cancelled. Workshop intake was not initiated, and your reserved time slot has been released.
+          </p>
+          <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
+            <a routerLink="/customer/bookings" class="btn btn-outline-secondary px-3 py-2">
+              <i class="bi bi-arrow-left me-1"></i> Back to My Bookings
+            </a>
+            <a routerLink="/customer/bookings/new" class="btn btn-sm-primary px-3 py-2 shadow-sm">
+              <i class="bi bi-calendar2-plus-fill me-1"></i> Book New Service
+            </a>
+          </div>
+        </div>
+
+        <!-- Active / Confirmed Service Progress Telemetry -->
+        <div *ngIf="wf.bookingStatus !== 'CANCELLED'" class="glass-card p-4">
+          <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-diagram-3-fill me-2 text-accent"></i>Service Progress Telemetry
+            </h5>
+            <span
+              class="badge status-pill"
+              [ngClass]="{
+                'bg-warning text-dark': wf.workflowStatus === 'AWAITING_APPROVAL',
+                'bg-success': wf.workflowStatus === 'COMPLETED',
+                'bg-accent': wf.workflowStatus !== 'AWAITING_APPROVAL' && wf.workflowStatus !== 'COMPLETED'
+              }"
+            >
+              {{ wf.workflowStatusDisplayName || 'Booking Confirmed' }}
+            </span>
+          </div>
+
+          <!-- Service Completed Celebration & PDF Card -->
+          <div *ngIf="wf.workflowStatus === 'COMPLETED'" class="alert alert-success d-flex justify-content-between align-items-center p-3 mb-4 rounded shadow-sm flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-check fs-3 text-success"></i>
+              <div>
+                <div class="fw-bold text-navy">Service Completed & Certified</div>
+                <div class="small text-muted">Your verified digital service passport entry has been created and finalized.</div>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button
+                type="button"
+                class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
+                [disabled]="isDownloadingPdf()"
+                (click)="downloadPassportPdf()"
+              >
+                <span *ngIf="isDownloadingPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+                <i *ngIf="!isDownloadingPdf()" class="bi bi-file-earmark-pdf-fill"></i>
+                <span>{{ isDownloadingPdf() ? 'Downloading...' : 'Download History PDF' }}</span>
+              </button>
+              <a [routerLink]="['/customer/vehicles', wf.vehicleId, 'history']" class="btn btn-sm btn-outline-success fw-bold">
+                <i class="bi bi-journal-bookmark-fill me-1"></i> View Full Passport
+              </a>
+            </div>
+          </div>
+
+          <!-- Milestones Stepper List -->
+          <div class="milestone-timeline">
+            <div
+              *ngFor="let milestone of milestones; let last = last"
+              class="milestone-step"
+              [class.completed]="isMilestoneCompleted(milestone.key)"
+              [class.active]="isMilestoneActive(milestone.key)"
+            >
+              <!-- Timeline Marker Icon -->
+              <div class="marker-container">
+                <div class="milestone-marker">
+                  <i class="bi" [ngClass]="isMilestoneCompleted(milestone.key) ? 'bi-check-lg' : milestone.icon"></i>
+                </div>
+                <div *ngIf="!last" class="timeline-line"></div>
+              </div>
+
+              <!-- Step Info Content -->
+              <div class="milestone-content pb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <h6 class="milestone-title mb-0" [class.fw-bold]="isMilestoneActive(milestone.key)">
+                    {{ milestone.title }}
+                  </h6>
+                  <span *ngIf="getMilestoneTimestamp(milestone.key)" class="badge bg-light text-muted border">
+                    {{ getMilestoneTimestamp(milestone.key) | date:'shortTime' }}
+                  </span>
+                </div>
+                <p class="milestone-desc text-muted mb-0 small">
+                  {{ milestone.description }}
+                </p>
+
+                <!-- Active Step Pulse Indicator -->
+                <div *ngIf="isMilestoneActive(milestone.key)" class="active-badge mt-2 d-inline-flex align-items-center gap-1">
+                  <span class="spinner-grow spinner-grow-sm text-accent" role="status"></span>
+                  <span class="text-accent fw-bold small">Currently in Progress</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Workshop Notes if any -->
+          <div *ngIf="wf.notes" class="mt-4 p-3 bg-light rounded border">
+            <div class="fw-semibold text-navy small mb-1">
+              <i class="bi bi-chat-left-text me-1 text-accent"></i>Technician Workshop Notes:
+            </div>
+            <div class="text-muted small fst-italic">{{ wf.notes }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

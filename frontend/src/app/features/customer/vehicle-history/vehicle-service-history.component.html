@@ -1,0 +1,355 @@
+<div class="history-page-container">
+  <!-- Back Button & Breadcrumbs -->
+  <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a [routerLink]="backLink" class="btn btn-sm btn-outline-dark-navy d-inline-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-arrow-left"></i>
+      <span>{{ backLabel }}</span>
+    </a>
+    <div class="text-muted small">
+      <i class="bi bi-shield-check text-success me-1"></i> Verified Digital Service Passport
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-navy-primary" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Loading history...</span>
+    </div>
+    <div class="mt-3 text-navy-primary fw-semibold">Loading Verified Vehicle Service Passport...</div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4 shadow-sm">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+    <div>{{ errorMessage() }}</div>
+  </div>
+  <div *ngIf="successMessage()" class="alert alert-success d-flex align-items-center gap-2 rounded-3 mb-4 shadow-sm">
+    <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+    <div>{{ successMessage() }}</div>
+  </div>
+
+  <div *ngIf="!isLoading() && history() as hist">
+    <!-- Vehicle Dossier Hero Card -->
+    <div class="vehicle-dossier-card mb-4 shadow-sm">
+      <div class="dossier-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="car-badge-icon">
+            <i class="bi bi-car-front-fill"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="reg-number-pill">{{ hist.vehicleRegistrationNumber }}</span>
+              <span class="badge bg-soft-blue text-navy-primary fw-bold">{{ hist.vehicleFuelType }}</span>
+              <span class="badge bg-soft-blue text-navy-primary fw-bold">{{ hist.vehicleTransmission }}</span>
+            </div>
+            <h2 class="vehicle-title mt-1 mb-0">{{ hist.vehicleMake }} {{ hist.vehicleModel }}</h2>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button
+            (click)="downloadFullPdf()"
+            [disabled]="isDownloadingFullPdf() || hist.records.length === 0"
+            class="btn btn-pink-cta d-inline-flex align-items-center gap-2 shadow-sm"
+          >
+            <span *ngIf="isDownloadingFullPdf()" class="spinner-border spinner-border-sm" role="status"></span>
+            <i *ngIf="!isDownloadingFullPdf()" class="bi bi-file-earmark-pdf-fill"></i>
+            <span>{{ isDownloadingFullPdf() ? 'Generating PDF...' : 'Download Complete History PDF' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dossier Metrics Grid -->
+      <div class="dossier-metrics-grid mt-3">
+        <div class="metric-box">
+          <div class="metric-label">Current Odometer</div>
+          <div class="metric-val text-navy-primary">{{ hist.currentMileage | number }} km</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Completed Visits</div>
+          <div class="metric-val text-navy-primary">{{ hist.totalCompletedVisits }}</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Cumulative Maintenance</div>
+          <div class="metric-val text-pink-accent">{{ hist.totalAmountSpent | currency:'INR':'symbol':'1.2-2' }}</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Registered Owner</div>
+          <div class="metric-val text-navy-primary">{{ hist.customerName }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="hist.records.length === 0" class="empty-history-card text-center py-5 shadow-sm">
+      <div class="empty-icon-circle mb-3">
+        <i class="bi bi-journal-medical text-navy-primary" style="font-size: 2.5rem;"></i>
+      </div>
+      <h4 class="fw-bold text-navy-primary">No Completed Service Visits Yet</h4>
+      <p class="text-muted mx-auto" style="max-width: 500px;">
+        When your vehicle undergoes service visits at our authorized workshop, your complete itemized service records, 40-point diagnostics, and verified maintenance certificates will appear here.
+      </p>
+      <div class="mt-4">
+        <a routerLink="/customer/bookings/new" class="btn btn-pink-cta shadow-sm">
+          <i class="bi bi-calendar-plus me-1"></i> Book First Service
+        </a>
+      </div>
+    </div>
+
+    <!-- History Timeline & Records List -->
+    <div *ngIf="hist.records.length > 0">
+      <!-- Search & Controls Toolbar -->
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div class="position-relative flex-grow-1" style="max-width: 380px;">
+          <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+          <input
+            type="text"
+            class="form-control ps-5 search-input"
+            placeholder="Search records, parts, findings..."
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+          />
+        </div>
+        <div class="d-flex gap-2">
+          <button (click)="expandAll()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrows-expand me-1"></i> Expand All
+          </button>
+          <button (click)="collapseAll()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrows-collapse me-1"></i> Collapse All
+          </button>
+        </div>
+      </div>
+
+      <div class="timeline-container">
+        <div *ngFor="let record of filteredRecords(); let i = index" class="visit-card mb-4 shadow-sm">
+          <!-- Visit Header (Click to Toggle) -->
+          <div class="visit-header p-3 d-flex justify-content-between align-items-center flex-wrap gap-3" (click)="toggleRecord(record.id)">
+            <div class="d-flex align-items-center gap-3">
+              <div class="visit-number-badge">
+                #{{ hist.records.length - i }}
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="badge bg-navy-pill">{{ record.serviceTypeDisplayName }}</span>
+                  <span class="text-muted small">
+                    <i class="bi bi-calendar-event me-1"></i> {{ record.serviceDate | date:'dd MMM yyyy' }}
+                  </span>
+                  <span class="text-muted small">
+                    <i class="bi bi-speedometer2 me-1"></i> {{ record.mileage | number }} km
+                  </span>
+                </div>
+                <div class="visit-summary-preview text-navy-primary fw-semibold mt-1">
+                  {{ record.serviceSummary }}
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="text-end">
+                <div class="small text-muted">Total Paid</div>
+                <div class="fw-bold text-pink-accent fs-6">
+                  {{ record.actualTotalAmount | currency:'INR':'symbol':'1.2-2' }}
+                </div>
+              </div>
+
+              <!-- Download Single PDF -->
+              <button
+                (click)="downloadSinglePdf(record, $event)"
+                [disabled]="downloadingRecordId() === record.id"
+                class="btn btn-sm btn-outline-pdf d-inline-flex align-items-center gap-1 shadow-sm"
+                title="Download Visit PDF Report"
+              >
+                <span *ngIf="downloadingRecordId() === record.id" class="spinner-border spinner-border-sm" role="status"></span>
+                <i *ngIf="downloadingRecordId() !== record.id" class="bi bi-file-earmark-pdf"></i>
+                <span class="d-none d-md-inline">PDF</span>
+              </button>
+
+              <i class="bi text-muted toggle-chevron" [ngClass]="isExpanded(record.id) ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+          </div>
+
+          <!-- Visit Details Body (Expanded) -->
+          <div *ngIf="isExpanded(record.id)" class="visit-body p-4 border-top">
+            <!-- Technician Summary Banner -->
+            <div class="summary-box p-3 rounded-3 mb-3">
+              <div class="d-flex gap-2">
+                <i class="bi bi-wrench-adjustable-circle-fill text-pink-accent fs-5 flex-shrink-0"></i>
+                <div>
+                  <div class="fw-bold text-navy-primary small mb-1">Technician Workshop Assessment & Notes</div>
+                  <div class="text-dark small">{{ record.serviceSummary }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Service Summary Card -->
+            <div class="p-3 rounded-3 mb-4 border" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid var(--sm-navy-primary) !important;">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-robot text-navy-primary fs-5"></i>
+                  <span class="fw-bold text-navy-primary small">AI Service Summary</span>
+                  <span class="badge bg-light text-navy-primary border" style="font-size: 0.68rem;">Google Gemini</span>
+                </div>
+                <button
+                  (click)="generateAiSummary(record.id, $event)"
+                  [disabled]="isGeneratingSummary(record.id)"
+                  class="btn btn-sm btn-sm-outline py-1 px-3"
+                  style="font-size: 0.78rem;"
+                >
+                  <span *ngIf="isGeneratingSummary(record.id)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  <i *ngIf="!isGeneratingSummary(record.id) && !getAiSummary(record.id)" class="bi bi-stars me-1 text-accent-pink"></i>
+                  <i *ngIf="!isGeneratingSummary(record.id) && getAiSummary(record.id)" class="bi bi-arrow-repeat me-1"></i>
+                  <span>{{ isGeneratingSummary(record.id) ? 'Generating Summary...' : (getAiSummary(record.id) ? 'Regenerate Summary' : 'Generate AI Summary') }}</span>
+                </button>
+              </div>
+
+              <!-- Loading State -->
+              <div *ngIf="isGeneratingSummary(record.id)" class="py-2 text-center">
+                <div class="spinner-border spinner-border-sm text-navy-primary me-2" role="status"></div>
+                <span class="small text-navy-primary fw-semibold">🤖 Preparing your customer-friendly service summary...</span>
+              </div>
+
+              <!-- Error State -->
+              <div *ngIf="getAiSummaryError(record.id) as err" class="alert alert-danger py-2 px-3 small mb-0 rounded-2 mt-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ err }}
+              </div>
+
+              <!-- Summary Content -->
+              <div *ngIf="getAiSummary(record.id) as summaryText" class="mt-2 pt-2 border-top">
+                <p class="small text-dark mb-1" style="line-height: 1.55;">{{ summaryText }}</p>
+                <div class="text-muted small" style="font-size: 0.72rem;">
+                  <i class="bi bi-info-circle me-1"></i> AI-generated summary based on recorded service data.
+                </div>
+              </div>
+
+              <!-- Initial Placeholder if not generated yet -->
+              <div *ngIf="!isGeneratingSummary(record.id) && !getAiSummary(record.id) && !getAiSummaryError(record.id)" class="text-muted small">
+                Click <em>Generate AI Summary</em> to get an easy-to-understand narrative breakdown of this service visit.
+              </div>
+            </div>
+
+            <!-- Work Performed & Replaced Parts Table -->
+            <div class="mb-4">
+              <h6 class="fw-bold text-navy-primary mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-tools text-soft-blue"></i>
+                <span>Work Performed & Replaced Parts</span>
+              </h6>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 custom-table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th class="text-center">Qty</th>
+                      <th class="text-end">Unit Price</th>
+                      <th class="text-end">Total Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of record.items">
+                      <td class="fw-semibold text-navy-primary">{{ item.description }}</td>
+                      <td>
+                        <span class="badge bg-light text-dark border">{{ item.category || 'PARTS' }}</span>
+                      </td>
+                      <td class="text-center">{{ item.quantity }}</td>
+                      <td class="text-end">{{ item.unitPrice | currency:'INR':'symbol':'1.2-2' }}</td>
+                      <td class="text-end fw-bold text-navy-primary">{{ (item.totalPrice || (item.unitPrice * item.quantity)) | currency:'INR':'symbol':'1.2-2' }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-light fw-bold">
+                      <td colspan="4" class="text-end">Base Service Items Subtotal:</td>
+                      <td class="text-end text-navy-primary">{{ record.actualBaseServiceAmount | currency:'INR':'symbol':'1.2-2' }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- 40-Point Diagnostic Inspection Observations -->
+            <div class="mb-4">
+              <h6 class="fw-bold text-navy-primary mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-clipboard2-pulse-fill text-soft-blue"></i>
+                <span>40-Point Diagnostic Inspection Observations</span>
+              </h6>
+              <div class="row g-2">
+                <div *ngFor="let finding of record.inspectionFindings" class="col-md-6">
+                  <div class="finding-card p-3 rounded-3 border h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-bold text-navy-primary">{{ finding.component }}</span>
+                      <span class="badge" [ngClass]="getConditionBadgeClass(finding.conditionStatus)">
+                        {{ finding.conditionStatus }}
+                      </span>
+                    </div>
+                    <div class="small text-muted">{{ finding.notes || 'No defects observed during check.' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Repairs (Approved vs Declined) -->
+            <div *ngIf="record.additionalRepairs && record.additionalRepairs.length > 0" class="mb-4">
+              <h6 class="fw-bold text-navy-primary mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-patch-question-fill text-soft-blue"></i>
+                <span>Additional Repair Discoveries & Customer Decisions</span>
+              </h6>
+              <div class="table-responsive">
+                <table class="table align-middle mb-0 custom-table">
+                  <thead>
+                    <tr>
+                      <th>Repair Finding</th>
+                      <th>Reason / Diagnosis</th>
+                      <th class="text-end">Estimate</th>
+                      <th class="text-center">Customer Decision</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let repair of record.additionalRepairs">
+                      <td class="fw-semibold">{{ repair.description }}</td>
+                      <td class="small text-muted">{{ repair.reason }}</td>
+                      <td class="text-end fw-bold">{{ repair.estimatedAmount | currency:'INR':'symbol':'1.2-2' }}</td>
+                      <td class="text-center">
+                        <span *ngIf="repair.status === 'APPROVED'" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                          <i class="bi bi-check-circle-fill me-1"></i> APPROVED (Performed)
+                        </span>
+                        <span *ngIf="repair.status === 'REJECTED'" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                          <i class="bi bi-x-circle-fill me-1"></i> DECLINED (Not Performed)
+                        </span>
+                        <span *ngIf="repair.status === 'PENDING'" class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                          PENDING
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Financial Calculation Card -->
+            <div class="financial-summary-card p-3 rounded-3 ms-auto" style="max-width: 450px;">
+              <div class="fw-bold text-navy-primary border-bottom pb-2 mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-receipt"></i>
+                <span>Final Billing Calculation</span>
+              </div>
+              <div class="d-flex justify-content-between py-1 small">
+                <span class="text-muted">Base Scheduled Service:</span>
+                <span class="fw-semibold text-navy-primary">{{ record.actualBaseServiceAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between py-1 small">
+                <span class="text-muted">Approved Additional Work:</span>
+                <span class="fw-semibold text-navy-primary">{{ record.actualAdditionalRepairsAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              </div>
+              <div *ngIf="record.pickupDropUsed" class="d-flex justify-content-between py-1 small">
+                <span class="text-muted">Doorstep Valet Pickup & Drop:</span>
+                <span class="fw-semibold text-navy-primary">{{ record.pickupDropCharge | currency:'INR':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold fs-6">
+                <span class="text-navy-primary">Total Amount Paid:</span>
+                <span class="text-pink-accent">{{ record.actualTotalAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

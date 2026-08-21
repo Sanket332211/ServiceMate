@@ -1,0 +1,282 @@
+/* ==========================================================================
+   ServiceMate — Official Global Design System & Token Architecture
+   
+   Official 6-Color Palette:
+   1. Primary Dark Navy : #0D1E4C (Main Navigation, Sidebar, Headings, Secondary CTA)
+   2. Deepest Navy      : #0B1B32 (Footer, Deep Navigation, Strong Contrast)
+   3. Dark Blue         : #26415E (Secondary Dark UI, Icons, Supporting Elements)
+   4. Soft Blue         : #83A6CE (Information, Status, Timeline Completed)
+   5. Blush (Canvas)    : #E5C9D7 (MAIN APPLICATION BACKGROUND, Soft Sections)
+   6. Pink (Accent)     : #C48CB3 (PRIMARY CTA BUTTONS, Badges, Active States)
+   ========================================================================== */
+
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+:root {
+  /* --- 1. Core Official Color Tokens --- */
+  --color-primary: #0D1E4C;       /* Primary Dark Navy */
+  --color-deep: #0B1B32;          /* Deepest Navy */
+  --color-dark-blue: #26415E;     /* Secondary Dark Blue */
+  --color-blue: #83A6CE;          /* Soft Blue (Info / Completed) */
+  --color-background: #E5C9D7;    /* Blush (Main Application Canvas Background) */
+  --color-accent: #C48CB3;        /* Pink (Primary CTA / Active Highlight) */
+
+  /* --- 2. System Aliases & Supporting Tokens --- */
+  --sm-primary-navy: var(--color-primary);
+  --sm-deep-navy: var(--color-deep);
+  --sm-dark-blue: var(--color-dark-blue);
+  --sm-soft-blue: var(--color-blue);
+  --sm-blush-bg: var(--color-background);
+  --sm-accent-pink: var(--color-accent);
+
+  /* --- 3. Surfaces & Content Areas (Light Surfaces on Blush Canvas) --- */
+  --sm-card-surface: #ffffff;
+  --sm-card-surface-translucent: rgba(255, 255, 255, 0.95);
+  --sm-card-surface-soft: #fdfbfd;
+  --sm-border-subtle: rgba(13, 30, 76, 0.08);
+  --sm-border-blush: rgba(196, 140, 179, 0.4);
+  --sm-border-accent: var(--color-accent);
+
+  /* --- 4. Text Hierarchy --- */
+  --sm-text-primary: var(--color-primary);
+  --sm-text-dark: var(--color-deep);
+  --sm-text-muted: #596780;
+  --sm-text-light: #ffffff;
+  --sm-text-accent: var(--color-accent);
+
+  /* --- 5. Timeline & Service Workflow Tokens --- */
+  --sm-status-completed: var(--color-blue);
+  --sm-status-current: var(--color-accent);
+  --sm-status-upcoming: rgba(13, 30, 76, 0.15);
+  --sm-status-important: var(--color-primary);
+
+  /* --- 6. Restrained Semantic Status Colors --- */
+  --sm-semantic-success: #10b981;
+  --sm-semantic-warning: #f59e0b;
+  --sm-semantic-danger: #ef4444;
+
+  /* --- 7. Elevation & Shadows --- */
+  --sm-shadow-sm: 0 2px 4px rgba(13, 30, 76, 0.04);
+  --sm-shadow: 0 8px 20px -4px rgba(13, 30, 76, 0.08), 0 4px 8px -2px rgba(13, 30, 76, 0.04);
+  --sm-shadow-lg: 0 14px 28px -5px rgba(13, 30, 76, 0.12), 0 6px 12px -3px rgba(13, 30, 76, 0.06);
+}
+
+/* Base Body Styles — Blush Canvas (#E5C9D7) */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-deep);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* --- Gradients --- */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--color-deep) 0%, var(--color-primary) 100%);
+}
+
+.brand-gradient-subtle {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-dark-blue) 100%);
+}
+
+.brand-gradient-accent {
+  background: linear-gradient(135deg, var(--color-accent) 0%, #d89ec7 100%);
+}
+
+.brand-gradient-soft {
+  background: linear-gradient(135deg, rgba(229, 201, 215, 0.4) 0%, #ffffff 100%);
+}
+
+/* --- Cards (Light Elevated Surfaces over Blush Canvas) --- */
+.brand-card {
+  background: var(--sm-card-surface);
+  border-radius: 16px;
+  border: 1px solid var(--sm-border-subtle);
+  box-shadow: var(--sm-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.brand-card:hover {
+  box-shadow: var(--sm-shadow-lg);
+  border-color: var(--sm-border-blush);
+}
+
+.brand-card-accent {
+  border-top: 4px solid var(--color-accent);
+}
+
+.brand-card-navy {
+  border-top: 4px solid var(--color-primary);
+}
+
+.brand-card-blue {
+  border-top: 4px solid var(--color-blue);
+}
+
+/* --- Button System --- */
+/* 1. PRIMARY BUTTON (#C48CB3 Pink - Main CTA for Book, Register, Login, Approve) */
+.btn-sm-primary, .btn-primary-cta {
+  background-color: var(--color-accent);
+  color: #ffffff;
+  border: 1px solid var(--color-accent);
+  font-weight: 600;
+  padding: 0.55rem 1.35rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-sm-primary:hover, .btn-sm-primary:focus,
+.btn-primary-cta:hover, .btn-primary-cta:focus {
+  background-color: #b1759f;
+  border-color: #b1759f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(196, 140, 179, 0.35);
+}
+
+/* 2. SECONDARY BUTTON (#0D1E4C Dark Navy - Important Secondary Actions) */
+.btn-sm-secondary, .btn-secondary-navy {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: 1px solid var(--color-primary);
+  font-weight: 600;
+  padding: 0.55rem 1.35rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-sm-secondary:hover, .btn-sm-secondary:focus,
+.btn-secondary-navy:hover, .btn-secondary-navy:focus {
+  background-color: var(--color-deep);
+  border-color: var(--color-deep);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(13, 30, 76, 0.25);
+}
+
+/* 3. OUTLINE BUTTON (#0D1E4C Border & Text) */
+.btn-sm-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  font-weight: 600;
+  padding: 0.55rem 1.35rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-sm-outline:hover, .btn-sm-outline:focus {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+/* 4. OUTLINE ACCENT BUTTON (#C48CB3 Border & Text) */
+.btn-sm-outline-accent {
+  background-color: transparent;
+  color: var(--color-accent);
+  border: 1.5px solid var(--color-accent);
+  font-weight: 600;
+  padding: 0.55rem 1.35rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-sm-outline-accent:hover, .btn-sm-outline-accent:focus {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+/* --- Badges & Tags --- */
+.status-badge {
+  padding: 0.38rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.badge-sm-accent {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.badge-sm-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.badge-sm-blue {
+  background-color: var(--color-blue);
+  color: var(--color-deep);
+}
+
+.badge-sm-blush {
+  background-color: rgba(229, 201, 215, 0.6);
+  color: var(--color-primary);
+  border: 1px solid var(--color-accent);
+}
+
+/* --- Form Controls --- */
+.form-control, .form-select {
+  border-radius: 10px;
+  border: 1px solid rgba(13, 30, 76, 0.15);
+  padding: 0.65rem 0.95rem;
+  background-color: #ffffff;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 0.25rem rgba(131, 166, 206, 0.25);
+}
+
+/* --- Utility Classes --- */
+.text-navy-primary { color: var(--color-primary) !important; }
+.text-navy-deep { color: var(--color-deep) !important; }
+.text-dark-blue { color: var(--color-dark-blue) !important; }
+.text-soft-blue { color: var(--color-blue) !important; }
+.text-accent-pink { color: var(--color-accent) !important; }
+
+.bg-navy-primary { background-color: var(--color-primary) !important; }
+.bg-navy-deep { background-color: var(--color-deep) !important; }
+.bg-dark-blue { background-color: var(--color-dark-blue) !important; }
+.bg-soft-blue { background-color: var(--color-blue) !important; }
+.bg-blush-canvas { background-color: var(--color-background) !important; }
+.bg-accent-pink { background-color: var(--color-accent) !important; }
+
+.border-navy-primary { border-color: var(--color-primary) !important; }
+.border-soft-blue { border-color: var(--color-blue) !important; }
+.border-soft-blush { border-color: var(--color-background) !important; }
+.border-accent-pink { border-color: var(--color-accent) !important; }
+
+/* --- Service Timeline Tokens --- */
+.timeline-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.timeline-step.completed {
+  background-color: var(--sm-status-completed);
+  color: #ffffff;
+}
+
+.timeline-step.current {
+  background-color: var(--sm-status-current);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(196, 140, 179, 0.35);
+}
+
+.timeline-step.upcoming {
+  background-color: rgba(229, 201, 215, 0.6);
+  color: var(--color-primary);
+  border: 1px solid var(--color-accent);
+}

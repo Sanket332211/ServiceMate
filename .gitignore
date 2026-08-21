@@ -1,0 +1,43 @@
+# ==========================================
+# Root .gitignore for ServiceMate Project
+# ==========================================
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+.history/
+
+# Backend (Maven & Spring Boot)
+backend/target/
+backend/*.log
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.properties
+
+# Frontend (Node & Angular)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.sass-cache/
+frontend/coverage/
+
+# Environment Variables & Secrets
+.env
+.env.*
+*.local
+
+# Personal interview/learning documentation
+README2.md

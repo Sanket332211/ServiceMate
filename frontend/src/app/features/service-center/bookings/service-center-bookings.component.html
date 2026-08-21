@@ -1,0 +1,219 @@
+<div class="service-center-queue-page py-4">
+  <div class="container-fluid px-lg-5">
+    <!-- Header & Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="page-title mb-1">
+          <i class="bi bi-kanban-fill me-2 text-accent"></i>Workshop Operations Queue
+        </h2>
+        <p class="text-muted mb-0">Real-time vehicle bay management, diagnostic milestone progression, and repairs.</p>
+      </div>
+      <div>
+        <button class="btn btn-outline-custom" (click)="loadWorkflows()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh Queue
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div *ngIf="errorMessage()" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="glass-stat-card p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="stat-label">Active in Workshop</div>
+              <div class="stat-value text-navy">{{ totalActiveCount() }}</div>
+            </div>
+            <div class="stat-icon-wrapper bg-navy">
+              <i class="bi bi-car-front-fill"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="glass-stat-card p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="stat-label">In Service Progress</div>
+              <div class="stat-value text-accent">{{ inProgressCount() }}</div>
+            </div>
+            <div class="stat-icon-wrapper bg-accent">
+              <i class="bi bi-tools"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="glass-stat-card p-3 border-warning-custom">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="stat-label text-warning-custom">Awaiting Customer Approval</div>
+              <div class="stat-value text-warning-custom">{{ awaitingApprovalCount() }}</div>
+            </div>
+            <div class="stat-icon-wrapper bg-warning text-dark">
+              <i class="bi bi-exclamation-octagon-fill"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="glass-stat-card p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="stat-label">Ready for Delivery</div>
+              <div class="stat-value text-success">{{ readyForDeliveryCount() }}</div>
+            </div>
+            <div class="stat-icon-wrapper bg-success text-white">
+              <i class="bi bi-check2-all"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="glass-card p-3 mb-4">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              placeholder="Search by customer, vehicle, plate, or booking ID..."
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="col-md-7 d-flex gap-2 flex-wrap justify-content-md-end">
+          <select
+            class="form-select w-auto"
+            [ngModel]="filterStatus()"
+            (ngModelChange)="filterStatus.set($event)"
+          >
+            <option value="ALL">All Stages</option>
+            <option value="NOT_RECEIVED">Not Received Yet (Pending Arrival)</option>
+            <option value="CAR_RECEIVED">Car Received</option>
+            <option value="INSPECTION">Inspection in Progress</option>
+            <option value="SERVICE_IN_PROGRESS">Service in Progress</option>
+            <option value="AWAITING_APPROVAL">Awaiting Approval</option>
+            <option value="QUALITY_CHECK">Quality Check</option>
+            <option value="READY_FOR_DELIVERY">Ready for Delivery</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Queue Table View -->
+    <div class="glass-card p-0 overflow-hidden">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-accent" role="status" style="width: 2.5rem; height: 2.5rem;">
+          <span class="visually-hidden">Loading queue...</span>
+        </div>
+        <p class="mt-2 text-muted small">Loading workshop queue telemetry...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && filteredWorkflows().length === 0" class="text-center py-5">
+        <i class="bi bi-inbox text-muted display-4"></i>
+        <h5 class="mt-3 text-navy">No Bookings Match Selected Filter</h5>
+        <p class="text-muted small">Try changing your search keywords or filter dropdown.</p>
+      </div>
+
+      <div *ngIf="!isLoading() && filteredWorkflows().length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0 custom-queue-table">
+          <thead class="table-dark-custom">
+            <tr>
+              <th scope="col">Booking #</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Vehicle</th>
+              <th scope="col">Service Package</th>
+              <th scope="col">Scheduled Slot</th>
+              <th scope="col">Current Stage</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let wf of filteredWorkflows()" [class.table-warning-row]="wf.workflowStatus === 'AWAITING_APPROVAL'">
+              <!-- Booking ID -->
+              <td>
+                <span class="fw-bold text-navy">#{{ wf.bookingId }}</span>
+                <div *ngIf="wf.pickupDropRequired" class="badge bg-info-subtle text-info-emphasis mt-1 d-block w-fit">
+                  <i class="bi bi-truck me-1"></i>Valet Pickup
+                </div>
+              </td>
+
+              <!-- Customer -->
+              <td>
+                <div class="fw-semibold text-navy">{{ wf.customerName }}</div>
+                <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ wf.customerPhone || 'N/A' }}</div>
+              </td>
+
+              <!-- Vehicle -->
+              <td>
+                <div class="fw-bold text-navy">{{ wf.vehicleMake }} {{ wf.vehicleModel }}</div>
+                <div class="text-accent fw-semibold font-monospace small">{{ wf.vehicleRegistrationNumber }}</div>
+              </td>
+
+              <!-- Package & Amount -->
+              <td>
+                <div class="fw-semibold text-navy">{{ wf.serviceTypeDisplayName }}</div>
+                <div class="text-muted small">Est: ₹{{ wf.estimatedTotalAmount | number }}</div>
+              </td>
+
+              <!-- Date & Slot -->
+              <td>
+                <div>{{ wf.bookingDate | date:'mediumDate' }}</div>
+                <div class="text-muted small">{{ wf.timeSlotLabel }}</div>
+              </td>
+
+              <!-- Workflow Stage -->
+              <td>
+                <span *ngIf="wf.bookingStatus === 'CANCELLED'" class="badge bg-danger text-white px-2.5 py-1 shadow-sm">
+                  <i class="bi bi-x-circle-fill me-1"></i> CANCELLED
+                </span>
+                <span *ngIf="wf.bookingStatus !== 'CANCELLED'" class="badge status-pill" [ngClass]="getStatusBadgeClass(wf.workflowStatus)">
+                  {{ wf.workflowStatusDisplayName || 'Not Received' }}
+                </span>
+                <div *ngIf="wf.bookingStatus !== 'CANCELLED' && wf.workflowStatus === 'AWAITING_APPROVAL'" class="text-danger small fw-bold mt-1">
+                  <i class="bi bi-exclamation-circle-fill me-1"></i>Approval Pending
+                </div>
+              </td>
+
+              <!-- Action Buttons -->
+              <td class="text-end">
+                <div class="d-flex justify-content-end gap-1 flex-wrap">
+                  <a
+                    *ngIf="wf.workflowStatus === 'COMPLETED'"
+                    [routerLink]="['/service-center/vehicles', wf.vehicleId, 'history']"
+                    class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1"
+                    title="View Vehicle Passport & History"
+                  >
+                    <i class="bi bi-file-earmark-pdf"></i> Passport
+                  </a>
+                  <a
+                    [routerLink]="['/service-center/workflow', wf.bookingId]"
+                    class="btn btn-sm btn-primary-custom d-inline-flex align-items-center gap-1"
+                  >
+                    <i class="bi bi-speedometer2"></i> Cockpit
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

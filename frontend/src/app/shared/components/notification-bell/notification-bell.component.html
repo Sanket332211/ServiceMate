@@ -1,0 +1,99 @@
+<div class="notification-bell-container position-relative">
+  <!-- Bell Button with Unread Badge -->
+  <button
+    type="button"
+    class="btn btn-sm btn-icon-bell position-relative d-inline-flex align-items-center justify-content-center p-2 rounded-circle"
+    [class.active]="isOpen()"
+    (click)="toggleDropdown($event)"
+    title="Notifications"
+    aria-label="View notifications"
+  >
+    <i class="bi bi-bell-fill fs-6 text-white"></i>
+    <span
+      *ngIf="notificationService.unreadCountSignal() > 0"
+      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+      style="font-size: 0.65rem; padding: 0.25em 0.5em;"
+    >
+      {{ notificationService.unreadCountSignal() > 99 ? '99+' : notificationService.unreadCountSignal() }}
+      <span class="visually-hidden">unread notifications</span>
+    </span>
+  </button>
+
+  <!-- Dropdown Menu -->
+  <div
+    *ngIf="isOpen()"
+    class="notification-dropdown shadow-lg rounded-3 border"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Dropdown Header -->
+    <div class="dropdown-header-custom p-3 border-bottom d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-bell text-accent-pink fw-bold"></i>
+        <span class="fw-bold text-navy-primary">Notifications</span>
+        <span
+          *ngIf="notificationService.unreadCountSignal() > 0"
+          class="badge bg-soft-pink text-accent-pink fw-bold px-2 py-0.5 rounded-pill"
+          style="font-size: 0.72rem;"
+        >
+          {{ notificationService.unreadCountSignal() }} unread
+        </span>
+      </div>
+      <button
+        *ngIf="notificationService.unreadCountSignal() > 0"
+        type="button"
+        class="btn btn-link btn-sm text-decoration-none p-0 text-accent-pink fw-semibold"
+        style="font-size: 0.78rem;"
+        (click)="onMarkAllAsRead($event)"
+      >
+        <i class="bi bi-check2-all me-1"></i>Mark all as read
+      </button>
+    </div>
+
+    <!-- Dropdown Body / Notification List -->
+    <div class="notification-list custom-scrollbar">
+      <!-- Empty State -->
+      <div
+        *ngIf="notificationService.notificationsSignal().length === 0"
+        class="text-center py-4 px-3"
+      >
+        <div class="mb-2 text-muted opacity-50">
+          <i class="bi bi-bell-slash fs-2"></i>
+        </div>
+        <p class="small text-muted mb-0">No notifications yet</p>
+        <span class="text-muted" style="font-size: 0.72rem;">Updates regarding your service will appear here.</span>
+      </div>
+
+      <!-- Notification Items -->
+      <div
+        *ngFor="let notif of notificationService.notificationsSignal()"
+        class="notification-item p-3 border-bottom d-flex align-items-start gap-2 cursor-pointer transition-bg"
+        [class.unread-item]="!notif.isRead"
+        (click)="onNotificationClick(notif)"
+      >
+        <div class="notif-icon-box rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 mt-1">
+          <i class="bi" [ngClass]="getIconClass(notif.type)"></i>
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
+            <span class="small fw-bold text-navy-primary text-truncate d-block" [class.fw-bold]="!notif.isRead">
+              {{ notif.title }}
+            </span>
+            <span class="text-muted text-nowrap flex-shrink-0" style="font-size: 0.7rem;">
+              {{ formatTimeAgo(notif.createdAt) }}
+            </span>
+          </div>
+          <p class="small text-muted mb-1 text-break" style="font-size: 0.78rem; line-height: 1.35;">
+            {{ notif.message }}
+          </p>
+          <div class="d-flex align-items-center justify-content-between">
+            <span *ngIf="notif.relatedBookingId" class="badge bg-light text-muted border" style="font-size: 0.68rem;">
+              Booking #{{ notif.relatedBookingId }}
+            </span>
+            <span *ngIf="!notif.isRead" class="unread-dot ms-auto" title="Unread">●</span>
+            <span *ngIf="notif.isRead" class="read-dot ms-auto" title="Read">○</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

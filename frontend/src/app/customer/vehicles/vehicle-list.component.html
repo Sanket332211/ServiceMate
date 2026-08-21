@@ -1,0 +1,241 @@
+<div class="row justify-content-center py-3">
+  <div class="col-12 col-lg-10">
+    <!-- Top Action Bar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <a routerLink="/customer/dashboard" class="text-decoration-none text-navy-primary small fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+          </a>
+          <span class="text-muted small">/</span>
+          <span class="text-muted small">My Vehicles</span>
+        </div>
+        <h3 class="h4 mb-0 fw-bold text-navy-primary">
+          <i class="bi bi-car-front-fill text-accent-pink me-2"></i> My Vehicle Garage
+        </h3>
+        <p class="text-muted small mb-0">Manage registered vehicles for upcoming service bookings</p>
+      </div>
+
+      <div>
+        <button (click)="openAddModal()" class="btn btn-sm-primary py-2 px-3 shadow-sm">
+          <i class="bi bi-plus-circle-fill me-1"></i> Add New Vehicle
+        </button>
+      </div>
+    </div>
+
+    <!-- Success Feedback Alert -->
+    <div *ngIf="successMessage()" class="alert alert-success d-flex align-items-center gap-2 small py-2 px-3 mb-4 rounded-3 shadow-sm" role="alert">
+      <i class="bi bi-check-circle-fill fs-5"></i>
+      <div>{{ successMessage() }}</div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="vehicleService.isLoading()" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status" style="color: var(--color-accent) !important;"></div>
+      <p class="text-muted small mt-2">Loading your garage...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!vehicleService.isLoading() && vehicleService.vehiclesSignal().length === 0" class="brand-card p-5 text-center my-4">
+      <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-4 mb-3" style="width: 80px; height: 80px;">
+        <i class="bi bi-car-front fs-1 text-muted"></i>
+      </div>
+      <h5 class="fw-bold text-navy-primary mb-1">No Vehicles Registered Yet</h5>
+      <p class="text-muted small mb-4">Add your first vehicle to start scheduling smart service bookings</p>
+      <button (click)="openAddModal()" class="btn btn-sm-primary py-2 px-4 shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Register Your First Vehicle
+      </button>
+    </div>
+
+    <!-- Vehicles Grid -->
+    <div *ngIf="!vehicleService.isLoading() && vehicleService.vehiclesSignal().length > 0" class="row g-4">
+      <div *ngFor="let v of vehicleService.vehiclesSignal()" class="col-12 col-md-6">
+        <div class="brand-card brand-card-navy p-4 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <!-- Vehicle Header: Make, Model & Plate -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h4 class="h5 mb-0 fw-bold text-navy-primary">{{ v.make }} {{ v.model }}</h4>
+                <span class="text-muted small">{{ v.manufacturingYear }} Model</span>
+              </div>
+              <span class="font-monospace fw-bold px-2 py-1 bg-light text-navy-deep rounded-2 border small" style="letter-spacing: 0.08em; border-color: rgba(13,30,76,0.2) !important;">
+                {{ v.registrationNumber }}
+              </span>
+            </div>
+
+            <!-- Vehicle Attribute Badges -->
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <!-- Fuel Type Badge -->
+              <span class="badge-sm-blue status-badge">
+                <i class="bi bi-fuel-pump-fill"></i> {{ v.fuelType }}
+              </span>
+
+              <!-- Transmission Badge -->
+              <span class="badge-sm-blush status-badge">
+                <i class="bi bi-gear-wide-connected"></i> {{ v.transmission }}
+              </span>
+
+              <!-- Mileage Badge -->
+              <span class="badge-sm-accent status-badge">
+                <i class="bi bi-speedometer2"></i> {{ v.currentMileage | number }} km
+              </span>
+            </div>
+          </div>
+
+          <!-- Card Actions -->
+          <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+            <a [routerLink]="['/customer/vehicles', v.id, 'history']" class="btn btn-sm btn-outline-primary py-1 px-3" style="font-size: 0.82rem; border-color: var(--primary-dark-navy); color: var(--primary-dark-navy);">
+              <i class="bi bi-file-earmark-text me-1"></i> Service History
+            </a>
+            <div class="d-flex gap-2">
+              <button (click)="openEditModal(v)" class="btn btn-sm btn-outline-secondary py-1 px-3" style="font-size: 0.82rem;">
+                <i class="bi bi-pencil me-1"></i> Edit
+              </button>
+              <button (click)="onDelete(v)" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.82rem;">
+                <i class="bi bi-trash me-1"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Vehicle Modal -->
+<div *ngIf="showModal()" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(11, 27, 50, 0.6); backdrop-filter: blur(4px);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content brand-card p-2 border-0 shadow-lg">
+      <div class="modal-header border-bottom pb-2">
+        <h5 class="modal-title fw-bold text-navy-primary">
+          <i class="bi" [ngClass]="isEditing() ? 'bi-pencil-square text-accent-pink' : 'bi-plus-circle text-accent-pink'"></i>
+          {{ isEditing() ? 'Edit Vehicle Details' : 'Register New Vehicle' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-body py-3">
+        <!-- Error Alert inside modal -->
+        <div *ngIf="errorMessage()" class="alert alert-danger small py-2 px-3 mb-3 rounded-3 d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>{{ errorMessage() }}</div>
+        </div>
+
+        <!-- Sample Demo Templates (Quick fill for manual testing) -->
+        <div class="p-2 mb-3 bg-light rounded border">
+          <div class="small fw-bold text-navy-primary mb-1">
+            <i class="bi bi-magic text-accent-pink me-1"></i> Demonstration Examples (Click to fill):
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" (click)="fillSampleVehicle(1)">
+              <strong>Example 1:</strong> Maruti Suzuki Swift (MH12AB1234)
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" (click)="fillSampleVehicle(2)">
+              <strong>Example 2:</strong> Hyundai Creta (MH14CD5678)
+            </button>
+          </div>
+        </div>
+
+        <form (ngSubmit)="onSave()">
+          <!-- Registration Number -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-navy-primary">
+              Registration Number (License Plate) <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control font-monospace text-uppercase"
+              placeholder="e.g. MH12AB1234"
+              [(ngModel)]="form.registrationNumber"
+              name="registrationNumber"
+              required
+            />
+            <div class="form-text small" style="font-size: 0.75rem;">Will automatically be converted to uppercase.</div>
+          </div>
+
+          <!-- Make & Model -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Make <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Honda"
+                [(ngModel)]="form.make"
+                name="make"
+                required
+              />
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Model <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. City"
+                [(ngModel)]="form.model"
+                name="model"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Year & Distance Covered -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Manufacturing Year <span class="text-danger">*</span></label>
+              <input
+                type="number"
+                class="form-control"
+                placeholder="2021"
+                [(ngModel)]="form.manufacturingYear"
+                name="manufacturingYear"
+                min="1980"
+                required
+              />
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Current Distance Covered (km)</label>
+              <input
+                type="number"
+                class="form-control"
+                placeholder="25000"
+                [(ngModel)]="form.currentMileage"
+                name="currentMileage"
+                min="0"
+              />
+              <div class="form-text small" style="font-size: 0.72rem;">Enter the distance currently shown on your vehicle's odometer.</div>
+            </div>
+          </div>
+
+          <!-- Fuel Type & Transmission -->
+          <div class="row g-2 mb-4">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Fuel Type <span class="text-danger">*</span></label>
+              <select class="form-select" [(ngModel)]="form.fuelType" name="fuelType" required>
+                <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-navy-primary">Transmission <span class="text-danger">*</span></label>
+              <select class="form-select" [(ngModel)]="form.transmission" name="transmission" required>
+                <option *ngFor="let t of transmissions" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Modal Actions -->
+          <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="closeModal()" [disabled]="isSubmitting()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-sm-primary px-4 shadow-sm" [disabled]="isSubmitting()">
+              <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <span *ngIf="!isSubmitting()"><i class="bi bi-check-lg me-1"></i> {{ isEditing() ? 'Update Vehicle' : 'Save Vehicle' }}</span>
+              <span *ngIf="isSubmitting()">Saving...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

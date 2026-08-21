@@ -1,0 +1,99 @@
+<div class="row justify-content-center py-4">
+  <div class="col-12 col-md-8 col-lg-5">
+    <div class="brand-card brand-card-navy p-4 p-md-5">
+      <!-- Header Branding -->
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-navy-primary text-white rounded-circle mb-3 shadow-sm" style="width: 64px; height: 64px;">
+          <i class="bi bi-shield-lock fs-2 text-accent-pink"></i>
+        </div>
+        <h3 class="fw-bold text-navy-primary mb-1">
+          Welcome to Service<span class="text-accent-pink">Mate</span>
+        </h3>
+        <p class="text-muted small">Sign in to access your smart car service account</p>
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center gap-2 small py-2 px-3 mb-4 rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>{{ errorMessage() }}</div>
+      </div>
+
+      <!-- Login Form -->
+      <form (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="email" class="form-label small fw-bold text-navy-primary">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+            <input
+              type="email"
+              id="email"
+              class="form-control border-start-0"
+              placeholder="name@example.com"
+              [(ngModel)]="email"
+              name="email"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label small fw-bold text-navy-primary">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-key text-muted"></i></span>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              class="form-control border-start-0 border-end-0"
+              placeholder="••••••••"
+              [(ngModel)]="password"
+              name="password"
+              required
+            />
+            <button
+              type="button"
+              class="btn btn-outline-secondary border-start-0 bg-light text-muted"
+              (click)="toggleShowPassword()"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+              title="{{ showPassword ? 'Hide password' : 'Show password' }}"
+            >
+              <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-sm-primary w-100 py-2 fs-6 shadow-sm mb-3"
+          [disabled]="isLoading()"
+        >
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span *ngIf="!isLoading()"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In</span>
+          <span *ngIf="isLoading()">Signing in...</span>
+        </button>
+      </form>
+
+      <!-- Register Link -->
+      <div class="text-center pt-2 border-top">
+        <p class="small text-muted mb-0">
+          Don't have an account?
+          <a routerLink="/register" class="fw-bold text-accent-pink text-decoration-none ms-1">Create Account</a>
+        </p>
+      </div>
+
+      <!-- Quick Demo Access Credentials -->
+      <div class="mt-4 p-3 rounded-3" style="background-color: rgba(229, 201, 215, 0.35); border: 1px dashed var(--sm-border-blush);">
+        <div class="small fw-bold text-navy-primary mb-2 d-flex align-items-center gap-1">
+          <i class="bi bi-lightning-charge-fill text-accent-pink"></i> Quick Demo Access:
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" (click)="fillCustomerDemo()" class="btn btn-sm btn-outline-secondary w-50 py-1" style="font-size: 0.75rem;">
+            👤 Customer Demo
+          </button>
+          <button type="button" (click)="fillAdminDemo()" class="btn btn-sm btn-outline-secondary w-50 py-1" style="font-size: 0.75rem;">
+            🛠️ Workshop Admin
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

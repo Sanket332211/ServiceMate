@@ -1,0 +1,12 @@
+{
+  "/api": {
+    "target": "http://localhost:8085",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/ws-servicemate": {
+    "target": "http://localhost:8085",
+    "ws": true,
+    "secure": false
+  }
+}
