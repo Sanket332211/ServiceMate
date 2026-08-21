@@ -1,0 +1,21 @@
+# Build artifacts and caches
+target/
+*.log
+
+# Version control and editor metadata
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+
+# Documentation and temporary files
+README2.md
+.DS_Store
+Thumbs.db
+*.tmp
