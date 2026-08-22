@@ -66,24 +66,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider())
             .authorizeHttpRequests(auth -> auth
                 // Preflight OPTIONS requests must always be permitted without authentication
-                .requestMatchers(org.springframework.web.cors.CorsUtils::isPreFlightRequest).permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(org.springframework.web.cors.CorsUtils::isPreFlightRequest).permitAll()
 
-                // Public endpoints accessible without authentication
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/ws-servicemate/**", "/error").permitAll()
-                
-                // Role-specific verification test endpoints
+                // Role-specific verification test endpoints (must precede general /api/auth/** wildcard)
                 .requestMatchers("/api/auth/customer-test").hasRole("CUSTOMER")
                 .requestMatchers("/api/auth/service-center-test").hasRole("SERVICE_CENTER")
-                
-                // Any other /api/auth/** endpoints (like /api/auth/me) require general authentication
-                .requestMatchers("/api/auth/**").authenticated()
+
+                // Public authentication and utility endpoints accessible without authentication
+                .requestMatchers("/api/auth/**", "/ws-servicemate/**", "/error").permitAll()
 
                 // Role-based route foundations for future modules
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
