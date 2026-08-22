@@ -17,6 +17,14 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # ------------------------------------------
+# TEMPORARY DIAGNOSTIC: Test DNS resolution & TCP port 24035 connectivity to Aiven MySQL from Render build container
+# ------------------------------------------
+RUN echo "=== [DIAGNOSTIC] Checking DNS & TCP connectivity to Aiven MySQL ===" && \
+    (getent ahosts mysql-1326c09a-servicemate.f.aivencloud.com || echo "Host resolution fallback") && \
+    (curl -v --connect-timeout 8 telnet://mysql-1326c09a-servicemate.f.aivencloud.com:24035 2>&1 || true) && \
+    echo "=== [DIAGNOSTIC] Network check completed ==="
+
+# ------------------------------------------
 # Stage 2: Lightweight Java 17 Runtime
 # ------------------------------------------
 FROM eclipse-temurin:17-jre-jammy
