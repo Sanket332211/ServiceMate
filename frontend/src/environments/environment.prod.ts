@@ -1,8 +1,9 @@
 /**
  * Environment configuration for ServiceMate Angular Application (Production)
- * Centralized API base URL pointing to the Spring Boot backend on port 8085.
+ * Centralized API base URL pointing to the deployed Render backend.
  */
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8085/api'
+  apiUrl: (typeof window !== 'undefined' && (window as any)?.__env?.apiUrl) || 'https://servicemate-jd5.onrender.com/api'
 };
+
