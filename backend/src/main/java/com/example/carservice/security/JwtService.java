@@ -6,12 +6,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +30,35 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    public static final String DEFAULT_DEV_SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+
+    @Value("${app.jwt.secret:" + DEFAULT_DEV_SECRET + "}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs; // Default: 24 Hours
+
+    @Autowired(required = false)
+    private Environment environment;
+
+    /**
+     * Validates that in production profiles ('prod' or 'production'), a dedicated non-default JWT_SECRET is provided.
+     */
+    @PostConstruct
+    public void validateJwtSecretConfiguration() {
+        if (environment != null) {
+            boolean isProd = Arrays.stream(environment.getActiveProfiles())
+                    .anyMatch(p -> p.equalsIgnoreCase("prod") || p.equalsIgnoreCase("production"));
+            if (isProd) {
+                if (jwtSecret == null || jwtSecret.trim().isEmpty() || DEFAULT_DEV_SECRET.equals(jwtSecret.trim())) {
+                    throw new IllegalStateException(
+                            "FATAL: In production environment ('prod' profile), a secure 'JWT_SECRET' environment variable MUST be provided! "
+                                    + "Using the fallback development secret is strictly forbidden."
+                    );
+                }
+            }
+        }
+    }
 
     /**
      * Converts configured secret string to HMAC-SHA SecretKey.

@@ -1,10 +1,15 @@
 package com.example.carservice.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * WebSocketConfig (Phase 1 Foundation)
@@ -17,6 +22,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Value("${app.cors.allowed-origins:${FRONTEND_URL:http://localhost:4200}}")
+    private String allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -32,9 +40,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Register WebSocket handshake endpoint with CORS allowance for Angular
+        List<String> patterns = new ArrayList<>(List.of("http://localhost:4200", "http://localhost:*"));
+        if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+            Arrays.stream(allowedOrigins.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty() && !patterns.contains(s))
+                    .forEach(patterns::add);
+        }
+
+        // Register WebSocket handshake endpoint with CORS allowance
         registry.addEndpoint("/ws-servicemate")
-                .setAllowedOriginPatterns("http://localhost:4200", "http://localhost:*")
+                .setAllowedOriginPatterns(patterns.toArray(new String[0]))
                 .withSockJS();
     }
 }

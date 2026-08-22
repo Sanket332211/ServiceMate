@@ -30,4 +30,6 @@ exec java \
   -Dspring.datasource.url="${DB_URL:-$SPRING_DATASOURCE_URL}" \
   -Dspring.datasource.username="${DB_USERNAME:-root}" \
   -Dspring.datasource.password="${DB_PASSWORD:-}" \
+  -Dapp.cors.allowed-origins="${FRONTEND_URL:-https://service-mate-one.vercel.app}" \
   -jar app.jar
+

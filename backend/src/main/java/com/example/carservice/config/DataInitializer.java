@@ -6,8 +6,10 @@ import com.example.carservice.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -16,8 +18,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * Seeds initial development user accounts upon application startup if they do not exist.
  * This provides a verified development SERVICE_CENTER administrative account without
  * opening public registration to administrative role escalation.
+ *
+ * In production (profile 'prod' / 'production' or app.data.seed-enabled=false),
+ * seed data generation is automatically disabled to protect public deployments.
  */
 @Configuration
+@Profile("!prod & !production")
+@ConditionalOnProperty(name = "app.data.seed-enabled", havingValue = "true", matchIfMissing = true)
 public class DataInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
