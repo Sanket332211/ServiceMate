@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,19 +15,20 @@ import java.util.List;
 /**
  * CorsConfig
  *
- * Configures Cross-Origin Resource Sharing (CORS) to allow the Angular frontend
- * (local development or production deployed URL) to communicate with this Spring Boot backend.
+ * Configures Cross-Origin Resource Sharing (CORS) and registers a global CorsFilter
+ * so all preflight OPTIONS and cross-origin requests are correctly intercepted and handled.
  */
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:${FRONTEND_URL:http://localhost:4200}}")
+    @Value("${app.cors.allowed-origins:https://service-mate-one.vercel.app}")
     private String allowedOrigins;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+
         // Allowed Origins & Origin Patterns (supports dynamic env var, Vercel wildcard, and local development)
         List<String> originPatterns = new ArrayList<>(Arrays.asList(
                 "https://*.vercel.app",
@@ -42,24 +44,20 @@ public class CorsConfig {
                     .filter(s -> !s.isEmpty() && !originPatterns.contains(s))
                     .forEach(originPatterns::add);
         }
-        
-        configuration.setAllowedOriginPatterns(originPatterns);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
-        ));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Link", "X-Total-Count"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+
+        config.setAllowedOriginPatterns(originPatterns);
+        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Link", "X-Total-Count"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public CorsFilter corsFilter(CorsConfigurationSource corsConfigurationSource) {
+        return new CorsFilter(corsConfigurationSource);
     }
 }
