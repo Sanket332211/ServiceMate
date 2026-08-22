@@ -17,12 +17,14 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # ------------------------------------------
-# TEMPORARY DIAGNOSTIC: Test DNS resolution & TCP port 24035 connectivity to Aiven MySQL from Render build container
+# TEMPORARY DIAGNOSTIC: Test MySQL Protocol & TLS Handshake to Aiven MySQL (Zero Secrets)
 # ------------------------------------------
-RUN echo "=== [DIAGNOSTIC] Checking DNS & TCP connectivity to Aiven MySQL ===" && \
-    (getent ahosts mysql-1326c09a-servicemate.f.aivencloud.com || echo "Host resolution fallback") && \
-    (curl -v --connect-timeout 8 telnet://mysql-1326c09a-servicemate.f.aivencloud.com:24035 2>&1 || true) && \
-    echo "=== [DIAGNOSTIC] Network check completed ==="
+RUN apt-get update -qq && apt-get install -y -qq default-mysql-client openssl > /dev/null 2>&1 && \
+    echo "=== [DIAGNOSTIC 1: OpenSSL MySQL STARTTLS Handshake] ===" && \
+    (echo "QUIT" | openssl s_client -starttls mysql -connect mysql-1326c09a-servicemate.f.aivencloud.com:24035 2>&1 | grep -E "SSL handshake|Protocol|Cipher|Verify return code|subject=|CONNECTED" || true) && \
+    echo "=== [DIAGNOSTIC 2: MySQL Client Protocol & Auth Stage Probe] ===" && \
+    (mysql -h mysql-1326c09a-servicemate.f.aivencloud.com -P 24035 -u avnadmin --ssl-mode=REQUIRED --connect-timeout=10 -e "SELECT 1;" 2>&1 || true) && \
+    echo "=== [DIAGNOSTIC COMPLETED] ==="
 
 # ------------------------------------------
 # Stage 2: Lightweight Java 17 Runtime
