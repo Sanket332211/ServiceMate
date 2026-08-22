@@ -24,4 +24,10 @@ java -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true -cp /ap
 echo "=================================================="
 echo "=== LAUNCHING SPRING BOOT APPLICATION ==="
 echo "=================================================="
-exec java -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true -jar app.jar
+exec java \
+  -Djava.net.preferIPv4Stack=true \
+  -Djava.net.preferIPv4Addresses=true \
+  -Dspring.datasource.url="${DB_URL:-$SPRING_DATASOURCE_URL}" \
+  -Dspring.datasource.username="${DB_USERNAME:-root}" \
+  -Dspring.datasource.password="${DB_PASSWORD:-}" \
+  -jar app.jar
