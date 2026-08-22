@@ -13,8 +13,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Build the executable Spring Boot JAR (skip tests during container build)
-RUN mvn clean package -DskipTests
+# Build the executable Spring Boot JAR and compile standalone diagnostic class
+RUN mvn clean package -DskipTests && \
+    javac -d /app/diagnostic-classes src/main/java/com/example/carservice/diagnostic/RuntimeNetworkDiagnostic.java
 
 # ------------------------------------------
 # Stage 2: Lightweight Java 17 Runtime
@@ -22,11 +23,19 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Copy the built JAR from the builder stage
+# Install lightweight diagnostic tools (netcat, curl, openssl) in the runtime container
+RUN apt-get update -qq && \
+    apt-get install -y -qq --no-install-recommends netcat-openbsd curl openssl > /dev/null 2>&1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the built JAR and diagnostic classes from the builder stage
 COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/diagnostic-classes /app/diagnostic-classes
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Expose default port (Render will dynamically override via PORT env variable)
 EXPOSE 8085
 
-# Run the Spring Boot application with IPv4 stack preference for cloud database connectivity
-ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true", "-jar", "app.jar"]
+# Execute the runtime diagnostic script before launching Spring Boot
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]
