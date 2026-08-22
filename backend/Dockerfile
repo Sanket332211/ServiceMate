@@ -17,16 +17,6 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # ------------------------------------------
-# TEMPORARY DIAGNOSTIC: Test MySQL Protocol & TLS Handshake to Aiven MySQL (Zero Secrets)
-# ------------------------------------------
-RUN apt-get update -qq && apt-get install -y -qq default-mysql-client openssl > /dev/null 2>&1 && \
-    echo "=== [DIAGNOSTIC 1: OpenSSL MySQL STARTTLS Handshake] ===" && \
-    (echo "QUIT" | openssl s_client -starttls mysql -connect mysql-1326c09a-servicemate.f.aivencloud.com:24035 2>&1 | grep -E "SSL handshake|Protocol|Cipher|Verify return code|subject=|CONNECTED" || true) && \
-    echo "=== [DIAGNOSTIC 2: MySQL Client Protocol & Auth Stage Probe] ===" && \
-    (mysql -h mysql-1326c09a-servicemate.f.aivencloud.com -P 24035 -u avnadmin --ssl-mode=REQUIRED --connect-timeout=10 -e "SELECT 1;" 2>&1 || true) && \
-    echo "=== [DIAGNOSTIC COMPLETED] ==="
-
-# ------------------------------------------
 # Stage 2: Lightweight Java 17 Runtime
 # ------------------------------------------
 FROM eclipse-temurin:17-jre-jammy
@@ -38,5 +28,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Expose default port (Render will dynamically override via PORT env variable)
 EXPOSE 8085
 
-# Run the Spring Boot application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the Spring Boot application with IPv4 stack preference for cloud database connectivity
+ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true", "-jar", "app.jar"]
