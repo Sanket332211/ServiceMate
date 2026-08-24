@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 echo "=================================================="
 echo "=== RUNTIME CONTAINER SYSTEM NETWORK SETUP ==="
