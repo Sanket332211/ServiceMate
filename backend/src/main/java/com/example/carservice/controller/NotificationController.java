@@ -17,6 +17,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/notifications")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH}, allowCredentials = "true")
 @PreAuthorize("isAuthenticated()")
 public class NotificationController {
 

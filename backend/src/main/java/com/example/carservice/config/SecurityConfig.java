@@ -89,22 +89,41 @@ public class SecurityConfig {
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
-            // Custom Exception Handlers for 401 Unauthorized and 403 Forbidden
+            // Custom Exception Handlers for 401 Unauthorized and 403 Forbidden with CORS injection
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
+                    setCorsHeaders(request, response);
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write("{\"success\":false,\"message\":\"Unauthorized: Authentication is required to access this resource.\",\"status\":401}");
+                    response.getWriter().flush();
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    setCorsHeaders(request, response);
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write("{\"success\":false,\"message\":\"Access denied: You do not have permission to access this resource.\",\"status\":403}");
+                    response.getWriter().flush();
                 })
             )
             // Register JWT filter before standard username/password filter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private void setCorsHeaders(jakarta.servlet.http.HttpServletRequest request, HttpServletResponse response) {
+        String origin = request.getHeader("Origin");
+        if (origin != null && !origin.isBlank()) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+        } else {
+            response.setHeader("Access-Control-Allow-Origin", "*");
+        }
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT, PATCH");
+        response.setHeader("Access-Control-Max-Age", "3600");
+        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, remember-me");
+        response.setHeader("Access-Control-Expose-Headers", "Authorization, Link, X-Total-Count");
+        response.setHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
     }
 }

@@ -77,6 +77,10 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getPassword() == null || request.getEmail().isBlank()) {
+            throw new InvalidCredentialsException("Invalid email or password.");
+        }
+
         String email = request.getEmail().trim().toLowerCase();
 
         // 1. Look up user by email
@@ -107,6 +111,9 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public UserProfileResponse getCurrentUserProfile(String email) {
+        if (email == null || email.isBlank()) {
+            throw new InvalidCredentialsException("User not found.");
+        }
         User user = userRepository.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new InvalidCredentialsException("User not found."));
         return new UserProfileResponse(user);

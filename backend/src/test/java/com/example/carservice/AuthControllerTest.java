@@ -206,4 +206,62 @@ public class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status", is(401)));
     }
+
+    @Test
+    @DisplayName("TEST 9: CORS preflight (OPTIONS) request to /api/auth/login succeeds with 200 and required CORS headers")
+    void testCorsPreflightOnLogin() throws Exception {
+        mockMvc.perform(options("/api/auth/login")
+                .header("Origin", "https://service-mate-one.vercel.app")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "Authorization, Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://service-mate-one.vercel.app"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
+                .andExpect(header().exists("Access-Control-Allow-Methods"))
+                .andExpect(header().exists("Access-Control-Allow-Headers"));
+    }
+
+    @Test
+    @DisplayName("TEST 10: Failed login returns 401 Unauthorized with explicit CORS headers")
+    void testFailedLoginIncludesCorsHeaders() throws Exception {
+        User user = new User("Rahul", "rahul@example.com", "9876543210", passwordEncoder.encode("password123"), Role.CUSTOMER);
+        userRepository.save(user);
+
+        LoginRequest loginRequest = new LoginRequest("rahul@example.com", "wrongpassword");
+        mockMvc.perform(post("/api/auth/login")
+                .header("Origin", "https://service-mate-one.vercel.app")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://service-mate-one.vercel.app"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.status", is(401)));
+    }
+
+    @Test
+    @DisplayName("TEST 11: Validation error returns 400 Bad Request with explicit CORS headers")
+    void testValidationErrorIncludesCorsHeaders() throws Exception {
+        LoginRequest invalidRequest = new LoginRequest("invalid-email-format", "");
+        mockMvc.perform(post("/api/auth/login")
+                .header("Origin", "https://service-mate-one.vercel.app")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://service-mate-one.vercel.app"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.status", is(400)));
+    }
+
+    @Test
+    @DisplayName("TEST 12: Security rejection on unauthenticated endpoint returns 401 with CORS headers")
+    void testSecurityUnauthorizedIncludesCorsHeaders() throws Exception {
+        mockMvc.perform(get("/api/auth/customer-test")
+                .header("Origin", "https://service-mate-one.vercel.app"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://service-mate-one.vercel.app"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
+                .andExpect(jsonPath("$.status", is(401)));
+    }
 }

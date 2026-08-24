@@ -19,6 +19,7 @@ import java.security.Principal;
  */
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH}, allowCredentials = "true")
 public class AiController {
 
     private final AiAdvisorService aiAdvisorService;

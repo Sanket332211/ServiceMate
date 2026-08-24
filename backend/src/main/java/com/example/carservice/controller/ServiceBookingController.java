@@ -22,6 +22,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/bookings")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH}, allowCredentials = "true")
 public class ServiceBookingController {
 
     private final ServiceBookingService bookingService;
