@@ -23,9 +23,9 @@ RUN mvn clean package -DskipTests && \
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Install lightweight diagnostic tools (netcat, curl, openssl) in the runtime container
+# Install lightweight diagnostic tools (netcat, curl, openssl, dnsutils) in the runtime container
 RUN apt-get update -qq && \
-    apt-get install -y -qq --no-install-recommends netcat-openbsd curl openssl > /dev/null 2>&1 && \
+    apt-get install -y -qq --no-install-recommends netcat-openbsd curl openssl dnsutils > /dev/null 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the built JAR and diagnostic classes from the builder stage

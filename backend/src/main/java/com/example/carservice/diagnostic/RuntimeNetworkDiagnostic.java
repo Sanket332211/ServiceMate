@@ -23,9 +23,8 @@ public class RuntimeNetworkDiagnostic {
         System.out.println("=== RUNTIME CONTAINER JAVA NETWORK DIAGNOSTIC ===");
         System.out.println("==================================================");
 
-        // D. JVM Network Properties
+        // JVM Network Properties
         System.out.println("\n[1] JVM System Properties:");
-        System.out.println("  java.net.preferIPv4Stack = " + System.getProperty("java.net.preferIPv4Stack"));
         System.out.println("  java.net.preferIPv4Addresses = " + System.getProperty("java.net.preferIPv4Addresses"));
         System.out.println("  java.version = " + System.getProperty("java.version"));
         System.out.println("  os.name = " + System.getProperty("os.name"));
