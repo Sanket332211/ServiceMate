@@ -4,5 +4,5 @@
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://servicemate-jd5.onrender.com/api'
+  apiUrl: 'https://servicemate-ljd5.onrender.com/api'
 };
