@@ -152,6 +152,36 @@ export class BookingWizardComponent implements OnInit {
     return this.selectedServices().map(s => s.displayName).join(', ');
   }
 
+  // Slot start hours (24-hour format)
+  private readonly slotStartHours: Record<TimeSlot, number> = {
+    MORNING_SLOT_1: 9,   // 09:00 AM
+    MORNING_SLOT_2: 11,  // 11:00 AM
+    AFTERNOON_SLOT_1: 14, // 02:00 PM
+    AFTERNOON_SLOT_2: 16  // 04:00 PM
+  };
+
+  isSlotPastForDate(slotType: TimeSlot, dateStr: string): boolean {
+    if (!dateStr) return false;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    if (dateStr < todayStr) {
+      return true;
+    }
+    if (dateStr > todayStr) {
+      return false;
+    }
+
+    const startHour = this.slotStartHours[slotType] ?? 0;
+    const slotStart = new Date(now);
+    slotStart.setHours(startHour, 0, 0, 0);
+
+    return now.getTime() >= slotStart.getTime();
+  }
+
   selectDate(dateStr: string): void {
     this.selectedDate.set(dateStr);
     this.selectedSlot.set(null);
@@ -162,8 +192,24 @@ export class BookingWizardComponent implements OnInit {
     this.isLoadingSlots.set(true);
     this.bookingService.getAvailability(dateStr).subscribe({
       next: (slots) => {
-        this.slotsAvailability.set(slots);
+        const enriched = slots.map(s => {
+          const isPast = s.past === true || this.isSlotPastForDate(s.slot, dateStr);
+          return {
+            ...s,
+            past: isPast,
+            available: s.available && !isPast
+          };
+        });
+
+        this.slotsAvailability.set(enriched);
         this.isLoadingSlots.set(false);
+
+        if (this.selectedSlot()) {
+          const currentlySelected = enriched.find(s => s.slot === this.selectedSlot()?.slot);
+          if (!currentlySelected || !currentlySelected.available) {
+            this.selectedSlot.set(null);
+          }
+        }
       },
       error: () => {
         this.isLoadingSlots.set(false);
@@ -172,7 +218,7 @@ export class BookingWizardComponent implements OnInit {
   }
 
   selectSlot(slot: SlotAvailabilityResponse): void {
-    if (slot.available) {
+    if (slot.available && !slot.past) {
       this.selectedSlot.set(slot);
       this.errorMessage.set(null);
     }
@@ -201,9 +247,16 @@ export class BookingWizardComponent implements OnInit {
       this.errorMessage.set('Please select at least one service package to proceed.');
       return;
     }
-    if (step === 4 && (!this.selectedDate() || !this.selectedSlot())) {
-      this.errorMessage.set('Please select an available date and time slot.');
-      return;
+    if (step === 4) {
+      if (!this.selectedDate() || !this.selectedSlot()) {
+        this.errorMessage.set('Please select an available date and time slot.');
+        return;
+      }
+      if (this.isSlotPastForDate(this.selectedSlot()!.slot, this.selectedDate())) {
+        this.errorMessage.set('The selected time slot has already passed for today. Please select an upcoming slot.');
+        this.selectedSlot.set(null);
+        return;
+      }
     }
 
     this.currentStep.set(step);

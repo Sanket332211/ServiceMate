@@ -262,31 +262,42 @@
         <div *ngFor="let s of slotsAvailability()" class="col-12 col-md-6">
           <div (click)="selectSlot(s)"
                class="p-3 rounded-3 border h-100 transition-all d-flex justify-content-between align-items-center"
-               [ngClass]="{'opacity-50 bg-light': !s.available}"
-               [style.border-color]="selectedSlot()?.slot === s.slot ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
-               [style.background-color]="selectedSlot()?.slot === s.slot ? 'rgba(196, 140, 179, 0.12)' : (s.available ? '#ffffff' : '#f8f9fa')"
-               [style.cursor]="s.available ? 'pointer' : 'not-allowed'">
+               [ngClass]="{'opacity-50 bg-light': !s.available || s.past}"
+               [style.border-color]="(selectedSlot()?.slot === s.slot && s.available && !s.past) ? 'var(--color-accent)' : 'var(--sm-border-subtle)'"
+               [style.background-color]="(selectedSlot()?.slot === s.slot && s.available && !s.past) ? 'rgba(196, 140, 179, 0.12)' : ((s.available && !s.past) ? '#ffffff' : '#f8f9fa')"
+               [style.cursor]="(s.available && !s.past) ? 'pointer' : 'not-allowed'">
             <div>
               <div class="d-flex align-items-center gap-2 mb-1">
-                <i class="bi bi-clock-fill" [ngClass]="s.available ? 'text-accent-pink' : 'text-muted'"></i>
-                <span class="fw-bold text-navy-primary">{{ s.label }}</span>
+                <i class="bi bi-clock-fill" [ngClass]="(s.available && !s.past) ? 'text-accent-pink' : 'text-muted'"></i>
+                <span class="fw-bold text-navy-primary" [class.text-muted]="!s.available || s.past">{{ s.label }}</span>
               </div>
               <div class="d-flex gap-2 align-items-center">
-                <span class="small text-muted" style="font-size: 0.78rem;">Booked: {{ s.booked }} / {{ s.capacity }}</span>
-                <span *ngIf="s.available" class="small text-success fw-semibold" style="font-size: 0.78rem;">
-                  ({{ s.remaining }} {{ s.remaining === 1 ? 'spot' : 'spots' }} left)
+                <span *ngIf="s.past" class="small text-danger fw-semibold" style="font-size: 0.78rem;">
+                  <i class="bi bi-clock-history me-1"></i>Slot elapsed for today
                 </span>
+                <span *ngIf="!s.past && !s.available" class="small text-danger fw-semibold" style="font-size: 0.78rem;">
+                  Booked: {{ s.booked }} / {{ s.capacity }} (Slot full)
+                </span>
+                <ng-container *ngIf="s.available && !s.past">
+                  <span class="small text-muted" style="font-size: 0.78rem;">Booked: {{ s.booked }} / {{ s.capacity }}</span>
+                  <span class="small text-success fw-semibold" style="font-size: 0.78rem;">
+                    ({{ s.remaining }} {{ s.remaining === 1 ? 'spot' : 'spots' }} left)
+                  </span>
+                </ng-container>
               </div>
             </div>
 
             <div>
-              <span *ngIf="!s.available" class="badge bg-secondary px-2 py-1 small">FULL</span>
-              <span *ngIf="s.available && selectedSlot()?.slot === s.slot"
+              <span *ngIf="s.past" class="badge bg-secondary text-white px-2.5 py-1 small fw-semibold" style="font-size: 0.75rem;">
+                <i class="bi bi-x-circle me-1"></i>TIME PASSED
+              </span>
+              <span *ngIf="!s.past && !s.available" class="badge bg-danger text-white px-2 py-1 small">FULL</span>
+              <span *ngIf="s.available && !s.past && selectedSlot()?.slot === s.slot"
                     class="badge text-white px-3 py-1.5 fw-bold shadow-sm"
                     style="background-color: #198754; font-size: 0.8rem; letter-spacing: 0.03em;">
                 <i class="bi bi-check-lg me-1"></i> SELECTED
               </span>
-              <button *ngIf="s.available && selectedSlot()?.slot !== s.slot" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;">
+              <button *ngIf="s.available && !s.past && selectedSlot()?.slot !== s.slot" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;">
                 Select
               </button>
             </div>

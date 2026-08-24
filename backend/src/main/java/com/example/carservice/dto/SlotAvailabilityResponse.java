@@ -15,6 +15,7 @@ public class SlotAvailabilityResponse {
     private int booked;
     private int remaining;
     private boolean available;
+    private boolean past;
 
     public SlotAvailabilityResponse() {}
 
@@ -25,6 +26,17 @@ public class SlotAvailabilityResponse {
         this.booked = booked;
         this.remaining = remaining;
         this.available = available;
+        this.past = false;
+    }
+
+    public SlotAvailabilityResponse(TimeSlot slot, String label, int capacity, int booked, int remaining, boolean available, boolean past) {
+        this.slot = slot;
+        this.label = label;
+        this.capacity = capacity;
+        this.booked = booked;
+        this.remaining = remaining;
+        this.available = available;
+        this.past = past;
     }
 
     public TimeSlot getSlot() {
@@ -73,5 +85,13 @@ public class SlotAvailabilityResponse {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    public boolean isPast() {
+        return past;
+    }
+
+    public void setPast(boolean past) {
+        this.past = past;
     }
 }

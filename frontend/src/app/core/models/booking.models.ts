@@ -48,6 +48,7 @@ export interface SlotAvailabilityResponse {
   booked: number;
   remaining: number;
   available: boolean;
+  past?: boolean;
 }
 
 export interface ServiceTypeInfo {

@@ -14,12 +14,14 @@ import com.example.carservice.repository.UserRepository;
 import com.example.carservice.repository.VehicleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,6 +47,9 @@ public class ServiceBookingService {
     public static final int MAX_BOOKINGS_PER_SLOT = 2;
     public static final int PICKUP_DROP_FLAT_FEE = 300;
     public static final int MAX_BOOKING_WINDOW_DAYS = 7;
+
+    @Value("${app.business.timezone:Asia/Kolkata}")
+    private String businessTimezone = "Asia/Kolkata";
 
     private final ServiceBookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -234,14 +239,24 @@ public class ServiceBookingService {
         return BookingResponse.fromEntity(updated);
     }
 
+    public ZoneId getBusinessZone() {
+        try {
+            return ZoneId.of(businessTimezone != null ? businessTimezone : "Asia/Kolkata");
+        } catch (Exception e) {
+            log.warn("Invalid business timezone '{}', falling back to Asia/Kolkata: {}", businessTimezone, e.getMessage());
+            return ZoneId.of("Asia/Kolkata");
+        }
+    }
+
     /**
      * Checks real-time capacity and availability for all 4 fixed time slots on a requested date.
      */
     @Transactional(readOnly = true)
     public List<SlotAvailabilityResponse> getAvailabilityForDate(LocalDate date) {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = getBusinessZone();
+        LocalDate today = LocalDate.now(zone);
+        LocalTime now = LocalTime.now(zone);
         boolean isDateInRange = !date.isBefore(today) && !date.isAfter(today.plusDays(MAX_BOOKING_WINDOW_DAYS));
-        LocalTime now = LocalTime.now();
 
         List<SlotAvailabilityResponse> availabilityList = new ArrayList<>();
 
@@ -253,7 +268,7 @@ public class ServiceBookingService {
             );
 
             int remaining = Math.max(0, MAX_BOOKINGS_PER_SLOT - (int) bookedCount);
-            boolean isPastToday = date.isEqual(today) && now.isAfter(slot.getStartTime());
+            boolean isPastToday = date.isBefore(today) || (date.isEqual(today) && !now.isBefore(slot.getStartTime()));
             boolean available = isDateInRange && !isPastToday && remaining > 0;
 
             availabilityList.add(new SlotAvailabilityResponse(
@@ -262,7 +277,8 @@ public class ServiceBookingService {
                     MAX_BOOKINGS_PER_SLOT,
                     (int) bookedCount,
                     remaining,
-                    available
+                    available,
+                    isPastToday
             ));
         }
 
@@ -273,7 +289,9 @@ public class ServiceBookingService {
      * Validates date is within allowed 7-day window and not elapsed for today.
      */
     private void validateBookingDateAndTime(LocalDate date, TimeSlot timeSlot) {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = getBusinessZone();
+        LocalDate today = LocalDate.now(zone);
+        LocalTime now = LocalTime.now(zone);
 
         if (date.isBefore(today)) {
             throw new InvalidBookingDateException("Cannot book a service appointment for a past date.");
@@ -283,8 +301,8 @@ public class ServiceBookingService {
             throw new InvalidBookingDateException("Bookings can only be scheduled up to " + MAX_BOOKING_WINDOW_DAYS + " days in advance.");
         }
 
-        if (date.isEqual(today) && LocalTime.now().isAfter(timeSlot.getStartTime())) {
-            throw new InvalidBookingDateException("The selected time slot (" + timeSlot.getLabel() + ") has already passed for today.");
+        if (date.isEqual(today) && !now.isBefore(timeSlot.getStartTime())) {
+            throw new InvalidBookingDateException("The selected time slot (" + timeSlot.getLabel() + ") has already passed for today. Please select an upcoming time slot.");
         }
     }
 }
